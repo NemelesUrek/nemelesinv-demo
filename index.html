@@ -145,6 +145,29 @@
     color:var(--text);
     box-shadow:inset 0 0 0 1px rgba(139,92,246,.2);
   }
+  /* Botón "Más ▾" del nav: mismo chrome que un enlace de nav, con caret propio.
+     Reusa el sistema de popover (.pop-anchor + .popover) de la cabecera. */
+  .navmore-btn{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:8px 12px;border-radius:11px;font-weight:600;color:var(--muted);font-size:13.5px;
+    font-family:inherit;background:none;border:none;cursor:pointer;transition:.2s;
+  }
+  .navmore-btn:hover{background:rgba(15,23,42,.04);color:var(--text)}
+  .navmore-btn .caret{transition:transform .2s}
+  .navmore-btn[aria-expanded="true"] .caret{transform:rotate(180deg)}
+  /* Activo cuando la sección visible vive dentro del menú "Más" (lo marca el JS). */
+  .navmore-btn.active{
+    background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(6,182,212,.12));
+    color:var(--text);
+    box-shadow:inset 0 0 0 1px rgba(139,92,246,.2);
+  }
+  /* Items del menú "Más": navegan por data-view (entran en el selector navLinks). */
+  .navmore .pop-item.active{
+    background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(6,182,212,.12));
+    box-shadow:inset 0 0 0 1px rgba(139,92,246,.2);
+  }
+  .navmore .pi-ic{display:grid;place-items:center;width:18px;height:18px;flex-shrink:0;color:var(--violet)}
+  .navmore .pi-ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
   .search{
     display:flex;align-items:center;gap:8px;
@@ -933,20 +956,278 @@
       background:rgba(255,255,255,.93);
       backdrop-filter:saturate(160%) blur(8px);-webkit-backdrop-filter:saturate(160%) blur(8px);
       border-top:1px solid var(--line);
-      padding:6px 4px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));
-      justify-content:space-around;gap:2px;
+      padding:6px 6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));
+      gap:2px;
+      /* Ahora hay 10 secciones: la barra se desplaza en horizontal con
+         scroll-snap para que todas quepan con icono+label. Ocultamos la barra
+         de scroll (fea) pero el gesto/teclado siguen funcionando. */
+      overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+      scroll-snap-type:x proximity;
+      scrollbar-width:none;-ms-overflow-style:none;
     }
+    .tabbar::-webkit-scrollbar{display:none;height:0;width:0}
     .tabbar a{
-      flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      flex:0 0 auto;width:64px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
       min-height:48px;padding:4px 2px;border-radius:12px;text-decoration:none;
       font-size:10.5px;font-weight:600;color:var(--muted);line-height:1;text-align:center;
+      scroll-snap-align:center;
     }
     .tabbar a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .tabbar a.active{color:#7c3aed}
     .tabbar a:active{background:rgba(124,58,237,.08)}
+    /* Pista visual de que hay más pestañas: degradados en los bordes. */
+    .tabbar::before,.tabbar::after{content:"";position:fixed;bottom:0;width:22px;z-index:61;pointer-events:none;
+      height:calc(60px + env(safe-area-inset-bottom,0px))}
+    .tabbar::before{left:0;background:linear-gradient(90deg,rgba(255,255,255,.93),transparent)}
+    .tabbar::after{right:0;background:linear-gradient(270deg,rgba(255,255,255,.93),transparent)}
     body{padding-bottom:70px}
   }
   .theme-dark .tabbar{background:rgba(20,22,34,.93);border-top-color:rgba(255,255,255,.08)}
+  .theme-dark .tabbar::before{background:linear-gradient(90deg,rgba(20,22,34,.93),transparent)}
+  .theme-dark .tabbar::after{background:linear-gradient(270deg,rgba(20,22,34,.93),transparent)}
+
+  /* ===================== 19. USUARIOS · ROLES Y PERMISOS ===================== */
+  /* Reusa table.sales, .risk-pill, .chip, .card y los tokens. Solo añade los
+     chips de rol (color por familia), los chips de permiso, el avatar de fila,
+     la pill de estado y la matriz de roles. SIN correos ni teléfonos. */
+  .u-cell{display:flex;align-items:center;gap:11px;min-width:0}
+  .u-av{
+    width:34px;height:34px;border-radius:11px;flex-shrink:0;
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;letter-spacing:-.03em;
+    background:var(--grad-violet);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 4px 12px rgba(139,92,246,.28);
+  }
+  .u-cell .u-tx{min-width:0}
+  .u-cell .u-tx b{display:block;font-weight:700;line-height:1.2}
+  .u-cell .u-tx small{color:var(--muted);font-size:11.5px}
+  /* Chip de rol: color por familia (reusa el patrón de .risk-pill) */
+  .role-chip{
+    display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700;
+  }
+  .role-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+  .role-chip.admin{background:rgba(139,92,246,.14);color:#7c3aed}
+  .role-chip.almacen{background:rgba(6,182,212,.14);color:#0e7490}
+  .role-chip.compras{background:rgba(245,158,11,.16);color:#b45309}
+  .role-chip.ventas{background:rgba(20,184,166,.14);color:#0d9488}
+  /* Chips de permiso (más sobrios, en gris/acento) */
+  .perms{display:flex;flex-wrap:wrap;gap:5px}
+  .perm{
+    display:inline-flex;align-items:center;
+    padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;
+    background:rgba(15,23,42,.05);color:var(--muted);
+  }
+  .perm.on{background:rgba(139,92,246,.1);color:#7c3aed}
+  html.theme-dark .perm{background:rgba(255,255,255,.06)}
+  html.theme-dark .perm.on{background:rgba(139,92,246,.2);color:#c4b5fd}
+  /* Pill de estado Activo/Inactivo (reusa lenguaje de .risk-pill) */
+  .state-pill{
+    display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;
+  }
+  .state-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .state-pill.on{background:rgba(20,184,166,.14);color:#0d9488}
+  .state-pill.off{background:rgba(15,23,42,.06);color:var(--muted)}
+  html.theme-dark .state-pill.off{background:rgba(255,255,255,.07)}
+  /* Botones de acción por fila (icono) — reusan el chrome de .icon-btn en mini */
+  .row-actions{display:flex;gap:6px;justify-content:flex-end}
+  .act-btn{
+    width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;
+    background:rgba(255,255,255,.7);border:1px solid var(--line);color:var(--muted);transition:.18s;
+  }
+  .act-btn:hover{color:var(--text);transform:translateY(-1px);box-shadow:var(--shadow-sm);border-color:rgba(139,92,246,.3)}
+  .act-btn.danger:hover{color:var(--neg);border-color:rgba(239,68,68,.4)}
+  html.theme-dark .act-btn{background:rgba(255,255,255,.05)}
+  .act-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  table.users{min-width:880px}
+  /* Matriz de roles y permisos */
+  table.matrix{width:100%;border-collapse:collapse;min-width:560px;font-size:13px}
+  table.matrix caption{text-align:left;color:var(--muted);font-size:12px;margin-bottom:10px;font-weight:600}
+  table.matrix th,table.matrix td{padding:10px 12px;text-align:center}
+  table.matrix thead th{
+    font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;
+    border-bottom:1px solid var(--line);
+  }
+  table.matrix th[scope="row"]{text-align:left;font-weight:700}
+  table.matrix tbody tr{border-bottom:1px solid var(--line)}
+  table.matrix tbody tr:last-child{border-bottom:none}
+  table.matrix tbody tr:hover{background:rgba(139,92,246,.04)}
+  .mx-yes{color:#0d9488;font-weight:800}
+  .mx-no{color:var(--muted);opacity:.45;font-weight:800}
+
+  /* ===================== 20. CANALES · SINCRONIZACIÓN MULTICANAL ============== */
+  /* Tarjetas de canal (reusan .card) + cabecera con logo/inicial y estado, barra
+     de cobertura, métricas y botón "Sincronizar ahora" (reusa .repo-btn). */
+  .channel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .channel-card{display:flex;flex-direction:column;gap:14px;transition:.25s}
+  .channel-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+  .ch-head{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+  .ch-logo{
+    width:44px;height:44px;border-radius:13px;flex-shrink:0;
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;letter-spacing:-.03em;
+    background:var(--c1,#8b5cf6);box-shadow:0 6px 16px var(--c3,rgba(139,92,246,.32));
+  }
+  .ch-name{min-width:0}
+  .ch-name b{display:block;font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+  .ch-name .ch-sub{font-size:11.5px;color:var(--muted)}
+  .ch-state{
+    margin-left:auto;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  }
+  .ch-state::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+  .ch-state.ok{background:rgba(20,184,166,.14);color:#0d9488}
+  .ch-state.err{background:rgba(239,68,68,.12);color:var(--neg)}
+  .ch-state.pause{background:rgba(245,158,11,.16);color:#b45309}
+  /* mini métricas del canal */
+  .ch-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;position:relative;z-index:1}
+  .ch-stat{text-align:center;padding:9px 4px;border-radius:12px;background:rgba(15,23,42,.025);border:1px solid var(--line)}
+  .ch-stat b{display:block;font-size:15px;font-weight:800;letter-spacing:-.02em}
+  .ch-stat span{font-size:11px;color:var(--muted)}
+  .ch-stat.eur b{background:var(--grad-cv);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .ch-stat.warn b{color:#b45309}
+  html.theme-dark .ch-stat{background:rgba(255,255,255,.04)}
+  /* barra de cobertura (reusa el lenguaje de .progress) */
+  .ch-cov{position:relative;z-index:1}
+  .ch-cov .cov-head{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .ch-cov .cov-head b{color:var(--text)}
+  .ch-cov .progress{margin-top:0}
+  /* pie de la tarjeta: botón + última sync */
+  .ch-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;position:relative;z-index:1}
+  .ch-sync{font-size:11.5px;color:var(--muted)}
+  .ch-sync b{color:#0d9488;font-weight:700}
+  /* Bitácora de sincronización (timeline compacto) */
+  .synclog{display:flex;flex-direction:column;gap:2px;position:relative;z-index:1}
+  .synclog-item{display:flex;gap:11px;padding:10px 8px;border-radius:11px;align-items:flex-start;transition:.15s}
+  .synclog-item:hover{background:rgba(139,92,246,.05)}
+  .synclog-item .sl-ic{
+    width:26px;height:26px;border-radius:8px;flex-shrink:0;display:grid;place-items:center;color:#fff;
+    margin-top:1px;
+  }
+  .synclog-item .sl-ic svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .synclog-item .sl-tx{min-width:0;flex:1}
+  .synclog-item .sl-tx b{display:block;font-size:12.5px;font-weight:700;line-height:1.3}
+  .synclog-item .sl-tx small{font-size:11.5px;color:var(--muted)}
+  .synclog-item .sl-time{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;flex-shrink:0;margin-top:1px}
+
+  @media (max-width:1180px){
+    .channel-grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:640px){
+    .channel-grid{grid-template-columns:1fr}
+  }
+
+  /* ===================== 20.b PEDIDOS / CLIENTES / FACTURACIÓN ================
+     Pills de estado de pedido y de factura + chip de canal + barra de segmentos.
+     Todo reusa el lenguaje de .state-pill / .role-chip / .progress / .bar. */
+  /* Pill de estado (pedidos y facturas): familia de color por estado */
+  .status-pill{
+    display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;
+  }
+  .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+  .status-pill.pend{background:rgba(245,158,11,.16);color:#b45309}      /* Pendiente */
+  .status-pill.proc{background:rgba(139,92,246,.14);color:#7c3aed}      /* Procesando */
+  .status-pill.ship{background:rgba(6,182,212,.14);color:#0e7490}       /* Enviado */
+  .status-pill.done{background:rgba(20,184,166,.14);color:#0d9488}      /* Completado / Pagada */
+  .status-pill.cancel{background:rgba(15,23,42,.06);color:var(--muted)} /* Cancelada */
+  .status-pill.over{background:rgba(239,68,68,.12);color:var(--neg)}    /* Vencida */
+  html.theme-dark .status-pill.cancel{background:rgba(255,255,255,.07)}
+  /* Chip de canal/marketplace (reusa el lenguaje del .role-chip, sin punto) */
+  .chan-chip{
+    display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+    padding:3px 9px 3px 7px;border-radius:8px;font-size:11.5px;font-weight:700;
+    background:rgba(15,23,42,.04);color:var(--text);border:1px solid var(--line);
+  }
+  html.theme-dark .chan-chip{background:rgba(255,255,255,.05)}
+  .chan-chip .cc-ic{
+    width:16px;height:16px;border-radius:5px;flex-shrink:0;display:grid;place-items:center;
+    color:#fff;font-size:9px;font-weight:800;letter-spacing:-.04em;
+  }
+  /* Chip de segmento de cliente (mayorista/minorista/VIP) */
+  .seg-chip{
+    display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+    padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;
+  }
+  .seg-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+  .seg-chip.may{background:rgba(139,92,246,.14);color:#7c3aed}   /* Mayorista */
+  .seg-chip.min{background:rgba(6,182,212,.14);color:#0e7490}    /* Minorista */
+  .seg-chip.vip{background:rgba(245,158,11,.18);color:#b45309}   /* VIP */
+  /* Barra de segmentos de estado (un solo riel multicolor con leyenda) */
+  .segbar{display:flex;height:14px;border-radius:8px;overflow:hidden;background:rgba(15,23,42,.06)}
+  .segbar i{display:block;height:100%}
+  .segbar-legend{display:flex;flex-wrap:wrap;gap:14px 22px;margin-top:14px}
+  .segbar-legend .sl{display:flex;align-items:center;gap:8px;font-size:12.5px}
+  .segbar-legend .sl .dot{width:10px;height:10px;border-radius:4px;flex-shrink:0}
+  .segbar-legend .sl b{font-weight:800;letter-spacing:-.02em}
+  .segbar-legend .sl span{color:var(--muted);font-weight:600}
+  /* tablas anchas de estas vistas */
+  table.orders{min-width:880px}
+  table.customers{min-width:820px}
+  table.invoices{min-width:760px}
+  /* botón de acción de fila con texto (ver/procesar/PDF) — reusa .repo-btn en mini */
+  .mini-btn{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:9px;
+    font-size:12px;font-weight:700;color:var(--muted);background:rgba(255,255,255,.7);
+    border:1px solid var(--line);transition:.18s;white-space:nowrap;
+  }
+  .mini-btn:hover{color:var(--text);transform:translateY(-1px);box-shadow:var(--shadow-sm);border-color:rgba(139,92,246,.3)}
+  .mini-btn.primary{background:var(--grad-cv);color:#fff;border:none}
+  .mini-btn.primary:hover{color:#fff;box-shadow:0 6px 16px rgba(139,92,246,.35)}
+  html.theme-dark .mini-btn{background:rgba(255,255,255,.05)}
+  .mini-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  @media (max-width:900px){
+    .mini-btn{min-height:40px}
+  }
+
+  /* ===================== 21. MODAL (diálogo accesible · invitar usuario) ====== */
+  /* Overlay + panel. Reutiliza tokens, .chip, .cur-select y el lenguaje de form.
+     Se abre/cierra por clase .open (lo gestiona el JS con foco atrapado). */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:300;display:none;
+    align-items:center;justify-content:center;padding:20px;
+    background:rgba(15,23,42,.46);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  }
+  .modal-overlay.open{display:flex}
+  .modal{
+    width:100%;max-width:460px;max-height:calc(100vh - 40px);overflow:auto;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-lg);padding:24px;
+    transform:translateY(8px);opacity:0;transition:transform .2s ease,opacity .2s ease;
+  }
+  .modal-overlay.open .modal{transform:translateY(0);opacity:1}
+  .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+  .modal-head h3{font-size:18px;font-weight:800;letter-spacing:-.02em}
+  .modal-head p{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .modal-close{
+    width:34px;height:34px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+    background:rgba(15,23,42,.05);border:1px solid var(--line);color:var(--muted);transition:.18s;
+  }
+  .modal-close:hover{color:var(--text);background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}
+  html.theme-dark .modal-close{background:rgba(255,255,255,.06)}
+  .modal-close svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+  .field input,.field select{
+    width:100%;font-family:inherit;font-size:13.5px;color:var(--text);
+    background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:12px;
+    padding:11px 13px;transition:.18s;-webkit-appearance:none;appearance:none;
+  }
+  .field input:focus,.field select:focus{outline:none;border-color:rgba(139,92,246,.55);box-shadow:0 4px 14px rgba(139,92,246,.16)}
+  html.theme-dark .field input,html.theme-dark .field select{background:rgba(255,255,255,.05)}
+  .field select{
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 18px) 19px,calc(100% - 13px) 19px;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  }
+  .field .hint{font-size:11px;color:var(--muted);margin-top:5px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+
+  @media (max-width:480px){
+    .channel-card,.modal{border-radius:22px}
+    .ch-stat b{font-size:13.5px}
+    .modal{padding:20px}
+    .act-btn,.modal-close{min-width:40px;min-height:40px}
+  }
 </style>
 </head>
 <body>
@@ -966,11 +1247,42 @@
       <div>Nemeles<span class="accent">Inv</span></div>
     </a>
     <nav class="main" aria-label="Navegación principal">
+      <!-- PRINCIPALES (siempre visibles) -->
       <a href="#overview"  data-nav="Overview"   data-view="overview"   data-title="Overview · NemelesInv">Overview</a>
       <a href="#inventario" class="active" aria-current="page" data-nav="Inventario" data-view="inventario" data-title="NemelesInv · Analítica de Inventario Retail">Inventario</a>
+      <a href="#pedidos"   data-nav="Pedidos"    data-view="pedidos"    data-title="Pedidos · NemelesInv">Pedidos</a>
       <a href="#ventas"    data-nav="Ventas"     data-view="ventas"     data-title="Ventas · NemelesInv">Ventas</a>
-      <a href="#tiendas"   data-nav="Tiendas"    data-view="tiendas"    data-title="Tiendas · NemelesInv">Tiendas</a>
-      <a href="#reportes"  data-nav="Reportes"   data-view="reportes"   data-title="Reportes · NemelesInv">Reportes</a>
+      <a href="#canales"   data-nav="Canales"    data-view="canales"    data-title="Canales · NemelesInv">Canales</a>
+      <!-- SECUNDARIAS bajo el menú "Más ▾" (reusa el sistema de popover) -->
+      <div class="pop-anchor">
+        <button class="navmore-btn" type="button" id="moreBtn" aria-haspopup="true" aria-expanded="false" aria-controls="morePop">
+          Más
+          <svg class="caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="popover navmore" id="morePop" role="menu" aria-label="Más secciones" hidden>
+          <div class="pop-title">Más secciones</div>
+          <a class="pop-item" role="menuitem" href="#clientes"    data-nav="Clientes"    data-view="clientes"    data-title="Clientes · NemelesInv">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            Clientes
+          </a>
+          <a class="pop-item" role="menuitem" href="#tiendas"     data-nav="Tiendas"     data-view="tiendas"     data-title="Tiendas · NemelesInv">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg></span>
+            Tiendas
+          </a>
+          <a class="pop-item" role="menuitem" href="#usuarios"    data-nav="Usuarios"    data-view="usuarios"    data-title="Usuarios · NemelesInv">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            Usuarios
+          </a>
+          <a class="pop-item" role="menuitem" href="#facturacion" data-nav="Facturación" data-view="facturacion" data-title="Facturación · NemelesInv">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg></span>
+            Facturación
+          </a>
+          <a class="pop-item" role="menuitem" href="#reportes"    data-nav="Reportes"    data-view="reportes"    data-title="Reportes · NemelesInv">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg></span>
+            Reportes
+          </a>
+        </div>
+      </div>
     </nav>
     <div class="header-right">
       <div class="search">
@@ -2702,6 +3014,1430 @@
     </section>
   </section><!-- /#view-reportes -->
 
+  <!-- ===========================================================================
+       SPA · 5 VISTAS NUEVAS (stubs de ARQUITECTURA). El contenido lo llenan las
+       fases siguientes; aquí solo va el esqueleto: <section class="view"> + <h1>.
+       Cada una es hermana de las vistas existentes dentro de <main>, queda oculta
+       por defecto (.view{display:none}) y la activa el router por data-view.
+       Sin correos ni teléfonos en ningún lugar (regla anti-bloqueo): clientes y
+       usuarios se identifican por nombre/empresa/usuario.
+       =========================================================================== -->
+
+  <!-- VISTA: PEDIDOS (órdenes de compra/reposición y su ciclo de vida) -->
+  <section class="view" id="view-pedidos" data-view="pedidos" data-title="Pedidos · NemelesInv">
+    <div class="page-head">
+      <div>
+        <div class="crumbs">Dashboard / <b>Pedidos</b></div>
+        <h1>Gestión de <span class="grad">pedidos</span></h1>
+        <p>Órdenes de reposición y compra, su estado y cumplimiento · Últimos 60 días</p>
+      </div>
+      <div class="toolbar">
+        <a class="chip" href="#overview">← Resumen</a>
+        <a class="chip primary" href="#inventario">Ver inventario</a>
+      </div>
+    </div>
+
+    <!-- ===== KPIs de pedidos ===== -->
+    <section class="kpi-grid" aria-label="Indicadores clave de pedidos">
+
+      <!-- KPI HÉROE (doble ancho): pedidos del periodo -->
+      <div class="kpi hero" role="group" aria-label="Pedidos del periodo: 1.284 en 60 días, suben 9,2% frente al mes anterior; ticket medio de 86,40 euros">
+        <div class="kpi-top">
+          <span class="kpi-label">Pedidos del periodo</span>
+          <div class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></div>
+        </div>
+        <div class="hero-split">
+          <div>
+            <div class="kpi-value">1.284 <span style="font-size:18px;font-weight:700;opacity:.85">pedidos</span></div>
+            <div class="kpi-foot"><span class="delta warn">▲ 9,2%</span><span class="kpi-sub">últimos 60 días</span></div>
+          </div>
+          <p class="hero-aside">Ticket medio de <b data-eur="86.40" data-cfmt="price">86,40 €</b> con un cumplimiento del <b>94,6%</b>. <b>892 completados</b>, <b>146 en envío</b> y <b>168 pendientes</b> de procesar en 5 canales.</p>
+        </div>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(245,158,11,.2);--c1:#f59e0b;--c3:rgba(245,158,11,.35)" aria-label="Pedidos pendientes: 168, bajan 12 frente a ayer">
+        <div class="kpi-top">
+          <span class="kpi-label">Pendientes</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        </div>
+        <div class="kpi-value">168</div>
+        <div class="kpi-foot"><span class="delta up">▼ 12</span><span class="kpi-sub">por procesar</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 8 L10 10 L20 12 L30 12 L40 14 L50 16 L60 18 L70 20" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(6,182,212,.18);--c1:#06b6d4;--c3:rgba(6,182,212,.35)" aria-label="Pedidos en envío: 146, suben 8 frente a ayer">
+        <div class="kpi-top">
+          <span class="kpi-label">En envío</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+        </div>
+        <div class="kpi-value">146</div>
+        <div class="kpi-foot"><span class="delta up">▲ 8</span><span class="kpi-sub">en tránsito</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 20 L10 18 L20 16 L30 16 L40 12 L50 12 L60 8 L70 8" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(20,184,166,.18);--c1:#14b8a6;--c3:rgba(20,184,166,.35)" aria-label="Pedidos completados: 892, con un ticket medio de 86,40 euros">
+        <div class="kpi-top">
+          <span class="kpi-label">Completados</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:var(--pos)">892</div>
+        <div class="kpi-foot"><span class="delta up">▲ 11,4%</span><span class="kpi-sub">ticket <b data-eur="86.40" data-cfmt="price">86,40 €</b></span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 22 L10 20 L20 18 L30 14 L40 14 L50 10 L60 8 L70 4" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+    </section>
+
+    <!-- ===== Estado de pedidos (barra de segmentos) ===== -->
+    <section class="card" aria-labelledby="orderStateTitle">
+      <div class="card-head">
+        <div>
+          <h3 id="orderStateTitle">Estado de pedidos</h3>
+          <div class="sub">1.284 pedidos del periodo repartidos por estado de cumplimiento</div>
+        </div>
+        <div class="chip" style="background:linear-gradient(135deg,rgba(20,184,166,.12),rgba(6,182,212,.12));color:#0d9488;border-color:rgba(20,184,166,.2)">
+          <span style="width:6px;height:6px;border-radius:50%;background:#14b8a6;box-shadow:0 0 8px #14b8a6"></span>
+          94,6% cumplimiento
+        </div>
+      </div>
+      <!-- riel multicolor: 1.284 = Pendiente 168 (13,1%) + Procesando 92 (7,2%) +
+           Enviado 146 (11,4%) + Completado 892 (69,5%) — Cancelado dibuja 0% en el riel. -->
+      <div class="segbar" role="img" aria-label="Estado de pedidos: 168 pendientes (13,1%), 92 procesando (7,2%), 146 enviados (11,4%), 892 completados (69,5%) y 14 cancelados.">
+        <i style="width:13.1%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></i>
+        <i style="width:7.2%;background:linear-gradient(90deg,#8b5cf6,#a855f7)"></i>
+        <i style="width:11.4%;background:linear-gradient(90deg,#22d3ee,#06b6d4)"></i>
+        <i style="width:68.3%;background:linear-gradient(90deg,#14b8a6,#0d9488)"></i>
+      </div>
+      <div class="segbar-legend">
+        <div class="sl"><span class="dot" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)"></span><span><b>168</b> Pendiente · 13,1%</span></div>
+        <div class="sl"><span class="dot" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)"></span><span><b>92</b> Procesando · 7,2%</span></div>
+        <div class="sl"><span class="dot" style="background:linear-gradient(135deg,#22d3ee,#06b6d4)"></span><span><b>146</b> Enviado · 11,4%</span></div>
+        <div class="sl"><span class="dot" style="background:linear-gradient(135deg,#14b8a6,#0d9488)"></span><span><b>892</b> Completado · 69,5%</span></div>
+        <div class="sl"><span class="dot" style="background:rgba(15,23,42,.18)"></span><span><b>14</b> Cancelado · 1,1%</span></div>
+      </div>
+    </section>
+
+    <!-- ===== Tabla de pedidos ===== -->
+    <section class="card" aria-labelledby="ordersTableTitle" style="margin-top:22px">
+      <div class="card-head">
+        <div>
+          <h3 id="ordersTableTitle">Pedidos recientes</h3>
+          <div class="sub">Últimos pedidos por canal · cliente identificado por nombre o empresa, sin datos de contacto</div>
+        </div>
+        <a class="chip" href="#canales">Ver canales</a>
+      </div>
+      <div class="table-scroll">
+        <table class="sales orders">
+          <caption>Pedidos recientes con su folio, cliente, canal de venta, fecha, número de artículos, total y estado. El cliente se identifica solo por nombre o empresa.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Folio</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Canal</th>
+              <th scope="col">Fecha</th>
+              <th scope="col" class="num">Items</th>
+              <th scope="col" class="num">Total (€)</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-order="#ND-2041">
+              <th scope="row" style="font-weight:700">#ND-2041</th>
+              <td>Moda Atlántica S.L.</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true">ML</span>Mercado Libre</span></td>
+              <td>24 jun 2026</td>
+              <td class="num">12</td>
+              <td class="num eur"><span data-eur="1078.80" data-cfmt="full">1.078,80 €</span></td>
+              <td><span class="status-pill pend">Pendiente</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2041">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2041">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2040">
+              <th scope="row" style="font-weight:700">#ND-2040</th>
+              <td>Lucía Fernández</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td>24 jun 2026</td>
+              <td class="num">3</td>
+              <td class="num eur"><span data-eur="239.30" data-cfmt="full">239,30 €</span></td>
+              <td><span class="status-pill proc">Procesando</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2040">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2040">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2039">
+              <th scope="row" style="font-weight:700">#ND-2039</th>
+              <td>Distribuciones Vega</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)" aria-hidden="true">Wo</span>WooCommerce</span></td>
+              <td>23 jun 2026</td>
+              <td class="num">28</td>
+              <td class="num eur"><span data-eur="2154.40" data-cfmt="full">2.154,40 €</span></td>
+              <td><span class="status-pill ship">Enviado</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2039">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2039">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2038">
+              <th scope="row" style="font-weight:700">#ND-2038</th>
+              <td>Marcos Reyes</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td>23 jun 2026</td>
+              <td class="num">2</td>
+              <td class="num eur"><span data-eur="139.40" data-cfmt="full">139,40 €</span></td>
+              <td><span class="status-pill done">Completado</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2038">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2038">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2037">
+              <th scope="row" style="font-weight:700">#ND-2037</th>
+              <td>Boutique Mediterránea</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true">ML</span>Mercado Libre</span></td>
+              <td>22 jun 2026</td>
+              <td class="num">9</td>
+              <td class="num eur"><span data-eur="709.10" data-cfmt="full">709,10 €</span></td>
+              <td><span class="status-pill done">Completado</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2037">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2037">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2036">
+              <th scope="row" style="font-weight:700">#ND-2036</th>
+              <td>Sofía Castro</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#22d3ee,#06b6d4)" aria-hidden="true">Tn</span>Tiendanube</span></td>
+              <td>22 jun 2026</td>
+              <td class="num">1</td>
+              <td class="num eur"><span data-eur="89.90" data-cfmt="full">89,90 €</span></td>
+              <td><span class="status-pill cancel">Cancelado</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2036">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2036">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2035">
+              <th scope="row" style="font-weight:700">#ND-2035</th>
+              <td>Comercial Norteña</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#94a3b8,#475569)" aria-hidden="true">Az</span>Amazon</span></td>
+              <td>21 jun 2026</td>
+              <td class="num">34</td>
+              <td class="num eur"><span data-eur="2986.60" data-cfmt="full">2.986,60 €</span></td>
+              <td><span class="status-pill ship">Enviado</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2035">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2035">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2034">
+              <th scope="row" style="font-weight:700">#ND-2034</th>
+              <td>Pablo Núñez</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)" aria-hidden="true">Wo</span>WooCommerce</span></td>
+              <td>21 jun 2026</td>
+              <td class="num">5</td>
+              <td class="num eur"><span data-eur="349.50" data-cfmt="full">349,50 €</span></td>
+              <td><span class="status-pill pend">Pendiente</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2034">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2034">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2033">
+              <th scope="row" style="font-weight:700">#ND-2033</th>
+              <td>Almacenes del Sur</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true">ML</span>Mercado Libre</span></td>
+              <td>20 jun 2026</td>
+              <td class="num">18</td>
+              <td class="num eur"><span data-eur="1612.20" data-cfmt="full">1.612,20 €</span></td>
+              <td><span class="status-pill done">Completado</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2033">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2033">Procesar</button>
+                </div>
+              </td>
+            </tr>
+            <tr data-order="#ND-2032">
+              <th scope="row" style="font-weight:700">#ND-2032</th>
+              <td>Carmen Ortiz</td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td>20 jun 2026</td>
+              <td class="num">4</td>
+              <td class="num eur"><span data-eur="274.60" data-cfmt="full">274,60 €</span></td>
+              <td><span class="status-pill proc">Procesando</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="mini-btn" type="button" data-order-act="ver" data-order="#ND-2032">Ver</button>
+                  <button class="mini-btn primary" type="button" data-order-act="procesar" data-order="#ND-2032">Procesar</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">10 de 1.284 pedidos</td>
+              <td class="num">116</td>
+              <td class="num"><span data-eur="9633.40" data-cfmt="full">9.633,40 €</span></td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </section><!-- /#view-pedidos -->
+
+  <!-- VISTA: CLIENTES (cartera de clientes por nombre/empresa · sin email/tel) -->
+  <section class="view" id="view-clientes" data-view="clientes" data-title="Clientes · NemelesInv">
+    <div class="page-head">
+      <div>
+        <div class="crumbs">Dashboard / <b>Clientes</b></div>
+        <h1>Cartera de <span class="grad">clientes</span></h1>
+        <p>Clientes por nombre y empresa, segmentos, recurrencia y valor · Sin datos de contacto</p>
+      </div>
+      <div class="toolbar">
+        <a class="chip" href="#overview">← Resumen</a>
+        <a class="chip primary" href="#ventas">Ver ventas</a>
+      </div>
+    </div>
+
+    <!-- ===== KPIs de clientes ===== -->
+    <section class="kpi-grid" aria-label="Indicadores clave de clientes">
+
+      <!-- KPI HÉROE (doble ancho): cartera de clientes -->
+      <div class="kpi hero" role="group" aria-label="Cartera de 2.146 clientes, suben 6,8% frente al mes anterior; 184 nuevos este mes y 1.318 recurrentes, con un ticket medio de 86,40 euros">
+        <div class="kpi-top">
+          <span class="kpi-label">Clientes totales</span>
+          <div class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        </div>
+        <div class="hero-split">
+          <div>
+            <div class="kpi-value">2.146 <span style="font-size:18px;font-weight:700;opacity:.85">clientes</span></div>
+            <div class="kpi-foot"><span class="delta warn">▲ 6,8%</span><span class="kpi-sub">cartera activa</span></div>
+          </div>
+          <p class="hero-aside"><b>184 nuevos</b> este mes y <b>1.318 recurrentes</b> (61,4%). Ticket medio de <b data-eur="86.40" data-cfmt="price">86,40 €</b>. Identificados por nombre o empresa, sin datos de contacto.</p>
+        </div>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(139,92,246,.18);--c1:#8b5cf6;--c3:rgba(139,92,246,.35)" aria-label="Nuevos clientes del mes: 184, suben 14,2% frente al mes anterior">
+        <div class="kpi-top">
+          <span class="kpi-label">Nuevos del mes</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div>
+        </div>
+        <div class="kpi-value">184</div>
+        <div class="kpi-foot"><span class="delta up">▲ 14,2%</span><span class="kpi-sub">altas nuevas</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 22 L10 18 L20 18 L30 14 L40 12 L50 10 L60 8 L70 4" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(20,184,166,.18);--c1:#14b8a6;--c3:rgba(20,184,166,.35)" aria-label="Clientes recurrentes: 1.318, el 61,4% de la cartera">
+        <div class="kpi-top">
+          <span class="kpi-label">Recurrentes</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:var(--pos)">1.318</div>
+        <div class="kpi-foot"><span class="delta up">61,4%</span><span class="kpi-sub">de la cartera</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 18 L10 16 L20 16 L30 12 L40 12 L50 10 L60 8 L70 6" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(6,182,212,.18);--c1:#06b6d4;--c3:rgba(6,182,212,.35)" aria-label="Ticket medio por cliente: 86,40 euros, sube 1,9% frente al mes anterior">
+        <div class="kpi-top">
+          <span class="kpi-label">Ticket medio</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></div>
+        </div>
+        <div class="kpi-value" data-eur="86.40" data-cfmt="price">86,40 €</div>
+        <div class="kpi-foot"><span class="delta up">▲ 1,9%</span><span class="kpi-sub">por cliente</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 18 L10 20 L20 16 L30 14 L40 16 L50 10 L60 12 L70 8" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+    </section>
+
+    <!-- ===== Tabla de clientes ===== -->
+    <section class="card" aria-labelledby="customersTableTitle">
+      <div class="card-head">
+        <div>
+          <h3 id="customersTableTitle">Clientes principales</h3>
+          <div class="sub">Top clientes por valor comprado · identificados por nombre o empresa, sin datos de contacto</div>
+        </div>
+        <a class="chip" href="#ventas">Ver ventas</a>
+      </div>
+      <div class="table-scroll">
+        <table class="sales customers">
+          <caption>Clientes principales con su segmento, canal preferido, número de pedidos, total comprado y última compra. Se identifican solo por nombre o empresa, sin datos de contacto.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Cliente</th>
+              <th scope="col">Segmento</th>
+              <th scope="col">Canal preferido</th>
+              <th scope="col" class="num">Nº pedidos</th>
+              <th scope="col" class="num">Total comprado (€)</th>
+              <th scope="col">Última compra</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-customer="Distribuciones Vega">
+              <th scope="row" class="pname"><b>Distribuciones Vega</b><small>Empresa</small></th>
+              <td><span class="seg-chip may">Mayorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)" aria-hidden="true">Wo</span>WooCommerce</span></td>
+              <td class="num">142</td>
+              <td class="num eur"><span data-eur="284620" data-cfmt="full">284.620 €</span></td>
+              <td>23 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Distribuciones Vega">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Comercial Norteña">
+              <th scope="row" class="pname"><b>Comercial Norteña</b><small>Empresa</small></th>
+              <td><span class="seg-chip may">Mayorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#94a3b8,#475569)" aria-hidden="true">Az</span>Amazon</span></td>
+              <td class="num">118</td>
+              <td class="num eur"><span data-eur="231480" data-cfmt="full">231.480 €</span></td>
+              <td>21 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Comercial Norteña">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Moda Atlántica S.L.">
+              <th scope="row" class="pname"><b>Moda Atlántica S.L.</b><small>Empresa</small></th>
+              <td><span class="seg-chip vip">VIP</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true">ML</span>Mercado Libre</span></td>
+              <td class="num">96</td>
+              <td class="num eur"><span data-eur="198340" data-cfmt="full">198.340 €</span></td>
+              <td>24 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Moda Atlántica S.L.">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Almacenes del Sur">
+              <th scope="row" class="pname"><b>Almacenes del Sur</b><small>Empresa</small></th>
+              <td><span class="seg-chip may">Mayorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true">ML</span>Mercado Libre</span></td>
+              <td class="num">87</td>
+              <td class="num eur"><span data-eur="174900" data-cfmt="full">174.900 €</span></td>
+              <td>20 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Almacenes del Sur">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Boutique Mediterránea">
+              <th scope="row" class="pname"><b>Boutique Mediterránea</b><small>Empresa</small></th>
+              <td><span class="seg-chip vip">VIP</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td class="num">64</td>
+              <td class="num eur"><span data-eur="142760" data-cfmt="full">142.760 €</span></td>
+              <td>22 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Boutique Mediterránea">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Lucía Fernández">
+              <th scope="row" class="pname"><b>Lucía Fernández</b><small>Particular</small></th>
+              <td><span class="seg-chip min">Minorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td class="num">31</td>
+              <td class="num eur"><span data-eur="4860" data-cfmt="full">4.860 €</span></td>
+              <td>24 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Lucía Fernández">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Marcos Reyes">
+              <th scope="row" class="pname"><b>Marcos Reyes</b><small>Particular</small></th>
+              <td><span class="seg-chip min">Minorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td class="num">24</td>
+              <td class="num eur"><span data-eur="3420" data-cfmt="full">3.420 €</span></td>
+              <td>23 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Marcos Reyes">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Sofía Castro">
+              <th scope="row" class="pname"><b>Sofía Castro</b><small>Particular</small></th>
+              <td><span class="seg-chip min">Minorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#22d3ee,#06b6d4)" aria-hidden="true">Tn</span>Tiendanube</span></td>
+              <td class="num">19</td>
+              <td class="num eur"><span data-eur="2680" data-cfmt="full">2.680 €</span></td>
+              <td>22 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Sofía Castro">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Pablo Núñez">
+              <th scope="row" class="pname"><b>Pablo Núñez</b><small>Particular</small></th>
+              <td><span class="seg-chip min">Minorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)" aria-hidden="true">Wo</span>WooCommerce</span></td>
+              <td class="num">12</td>
+              <td class="num eur"><span data-eur="1540" data-cfmt="full">1.540 €</span></td>
+              <td>21 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Pablo Núñez">Ver perfil</button></div></td>
+            </tr>
+            <tr data-customer="Carmen Ortiz">
+              <th scope="row" class="pname"><b>Carmen Ortiz</b><small>Particular</small></th>
+              <td><span class="seg-chip min">Minorista</span></td>
+              <td><span class="chan-chip"><span class="cc-ic" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)" aria-hidden="true">Sh</span>Shopify</span></td>
+              <td class="num">8</td>
+              <td class="num eur"><span data-eur="980" data-cfmt="full">980 €</span></td>
+              <td>20 jun 2026</td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-customer-act="ver" data-customer="Carmen Ortiz">Ver perfil</button></div></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">10 de 2.146 clientes</td>
+              <td class="num">601</td>
+              <td class="num"><span data-eur="1046580" data-cfmt="full">1.046.580 €</span></td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </section><!-- /#view-clientes -->
+
+  <!-- VISTA: CANALES (sincronización con marketplaces · sensación tiempo real) -->
+  <section class="view" id="view-canales" data-view="canales" data-title="Canales · NemelesInv">
+    <div class="page-head">
+      <div>
+        <div class="crumbs">Dashboard / <b>Canales</b> / Sincronización</div>
+        <h1>Sincronización <span class="grad">en tiempo real</span></h1>
+        <p>Inventario unificado y publicado en Mercado Libre, Shopify, WooCommerce, Tiendanube y Amazon · 2.180 de 3.214 SKUs publicados · 386 sin mapear</p>
+      </div>
+      <div class="toolbar">
+        <a class="chip" href="#inventario">← Inventario</a>
+        <button class="chip primary" type="button" id="syncAllBtn" data-label="Sincronizar todo">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span data-syncall-text>Sincronizar todo</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== KPIs de sincronización ===== -->
+    <section class="kpi-grid" aria-label="Indicadores clave de sincronización multicanal">
+
+      <!-- KPI HÉROE (doble ancho): cobertura de publicación multicanal -->
+      <div class="kpi hero" role="group" aria-label="Cinco canales conectados con 2.180 productos publicados de 3.214; 386 SKUs sin mapear; última sincronización hace 2 minutos">
+        <div class="kpi-top">
+          <span class="kpi-label">Sincronización multicanal</span>
+          <div class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg></div>
+        </div>
+        <div class="hero-split">
+          <div>
+            <div class="kpi-value">2.180 <span style="font-size:18px;font-weight:700;opacity:.85">publicados</span></div>
+            <div class="kpi-foot"><span class="delta warn">▲ 124 hoy</span><span class="kpi-sub">de 3.214 SKUs · 68%</span></div>
+          </div>
+          <p class="hero-aside"><b>5 canales</b> conectados con stock unificado en tiempo real. Quedan <b>386 SKUs sin mapear</b> y la última sincronización fue <b>hace 2 min</b>. Diferénciate: un único inventario, todos los marketplaces.</p>
+        </div>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(139,92,246,.18);--c1:#8b5cf6;--c3:rgba(139,92,246,.35)" aria-label="Canales conectados: 5, uno en error y uno pausado">
+        <div class="kpi-top">
+          <span class="kpi-label">Canales conectados</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+        </div>
+        <div class="kpi-value">5</div>
+        <div class="kpi-foot"><span class="delta up">3 OK</span><span class="kpi-sub">1 error · 1 pausado</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 18 L10 18 L20 12 L30 12 L40 8 L50 8 L60 4 L70 4" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(245,158,11,.2);--c1:#f59e0b;--c3:rgba(245,158,11,.35)" aria-label="SKUs sin mapear: 386, bajan 42 frente a ayer">
+        <div class="kpi-top">
+          <span class="kpi-label">Sin mapear</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+        </div>
+        <div class="kpi-value">386</div>
+        <div class="kpi-foot"><span class="delta up">▼ 42</span><span class="kpi-sub">SKUs vs ayer</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 6 L10 8 L20 10 L30 12 L40 14 L50 16 L60 20 L70 22" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(20,184,166,.18);--c1:#14b8a6;--c3:rgba(20,184,166,.35)" aria-label="Última sincronización: hace 2 minutos, estado correcto">
+        <div class="kpi-top">
+          <span class="kpi-label">Última sincronización</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:var(--pos)">hace 2 min</div>
+        <div class="kpi-foot"><span class="delta up">✓ En vivo</span><span class="kpi-sub">cada 5 min</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 14 L10 8 L20 16 L30 6 L40 18 L50 10 L60 14 L70 8" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+    </section>
+
+    <!-- ===== Tarjetas por canal ===== -->
+    <h2 class="sr-only">Canales conectados</h2>
+    <section class="channel-grid" aria-label="Estado de sincronización por canal">
+
+      <!-- Canal: Mercado Libre (Conectado) -->
+      <article class="card channel-card" data-channel="Mercado Libre">
+        <div class="ch-head">
+          <div class="ch-logo" style="--c1:#fbbf24;--c3:rgba(251,191,36,.4)" aria-hidden="true">ML</div>
+          <div class="ch-name">
+            <b>Mercado Libre</b>
+            <span class="ch-sub">Marketplace · MLA</span>
+          </div>
+          <span class="ch-state ok">Conectado</span>
+        </div>
+        <div class="ch-stats">
+          <div class="ch-stat"><b>980</b><span>Publicados</span></div>
+          <div class="ch-stat warn"><b>142</b><span>Sin mapear</span></div>
+          <div class="ch-stat eur"><b data-eur="214000" data-cfmt="k">214K €</b><span>Venta</span></div>
+        </div>
+        <div class="ch-cov">
+          <div class="cov-head"><span>Cobertura de catálogo</span><b>87%</b></div>
+          <div class="progress" role="progressbar" aria-label="Cobertura de catálogo en Mercado Libre" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-valuetext="87%"><i style="width:87%;--c1:#fbbf24;--c2:#f59e0b"></i></div>
+        </div>
+        <div class="ch-foot">
+          <button class="repo-btn" type="button" data-sync="Mercado Libre">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span>Sincronizar ahora</span>
+          </button>
+          <span class="ch-sync" data-sync-label>última sync <b>hace 2 min</b></span>
+        </div>
+      </article>
+
+      <!-- Canal: Shopify (Conectado) -->
+      <article class="card channel-card" data-channel="Shopify">
+        <div class="ch-head">
+          <div class="ch-logo" style="--c1:#14b8a6;--c3:rgba(20,184,166,.4)" aria-hidden="true">Sh</div>
+          <div class="ch-name">
+            <b>Shopify</b>
+            <span class="ch-sub">Tienda online propia</span>
+          </div>
+          <span class="ch-state ok">Conectado</span>
+        </div>
+        <div class="ch-stats">
+          <div class="ch-stat"><b>540</b><span>Publicados</span></div>
+          <div class="ch-stat warn"><b>74</b><span>Sin mapear</span></div>
+          <div class="ch-stat eur"><b data-eur="132000" data-cfmt="k">132K €</b><span>Venta</span></div>
+        </div>
+        <div class="ch-cov">
+          <div class="cov-head"><span>Cobertura de catálogo</span><b>88%</b></div>
+          <div class="progress" role="progressbar" aria-label="Cobertura de catálogo en Shopify" aria-valuenow="88" aria-valuemin="0" aria-valuemax="100" aria-valuetext="88%"><i style="width:88%;--c1:#14b8a6;--c2:#06b6d4"></i></div>
+        </div>
+        <div class="ch-foot">
+          <button class="repo-btn" type="button" data-sync="Shopify">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span>Sincronizar ahora</span>
+          </button>
+          <span class="ch-sync" data-sync-label>última sync <b>hace 4 min</b></span>
+        </div>
+      </article>
+
+      <!-- Canal: WooCommerce (Conectado) -->
+      <article class="card channel-card" data-channel="WooCommerce">
+        <div class="ch-head">
+          <div class="ch-logo" style="--c1:#8b5cf6;--c3:rgba(139,92,246,.4)" aria-hidden="true">Wo</div>
+          <div class="ch-name">
+            <b>WooCommerce</b>
+            <span class="ch-sub">WordPress · plugin</span>
+          </div>
+          <span class="ch-state ok">Conectado</span>
+        </div>
+        <div class="ch-stats">
+          <div class="ch-stat"><b>360</b><span>Publicados</span></div>
+          <div class="ch-stat warn"><b>58</b><span>Sin mapear</span></div>
+          <div class="ch-stat eur"><b data-eur="78000" data-cfmt="k">78K €</b><span>Venta</span></div>
+        </div>
+        <div class="ch-cov">
+          <div class="cov-head"><span>Cobertura de catálogo</span><b>86%</b></div>
+          <div class="progress" role="progressbar" aria-label="Cobertura de catálogo en WooCommerce" aria-valuenow="86" aria-valuemin="0" aria-valuemax="100" aria-valuetext="86%"><i style="width:86%;--c1:#8b5cf6;--c2:#06b6d4"></i></div>
+        </div>
+        <div class="ch-foot">
+          <button class="repo-btn" type="button" data-sync="WooCommerce">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span>Sincronizar ahora</span>
+          </button>
+          <span class="ch-sync" data-sync-label>última sync <b>hace 6 min</b></span>
+        </div>
+      </article>
+
+      <!-- Canal: Tiendanube (Error de mapeo) -->
+      <article class="card channel-card" data-channel="Tiendanube">
+        <div class="ch-head">
+          <div class="ch-logo" style="--c1:#06b6d4;--c3:rgba(6,182,212,.4)" aria-hidden="true">Tn</div>
+          <div class="ch-name">
+            <b>Tiendanube</b>
+            <span class="ch-sub">Marketplace · LatAm</span>
+          </div>
+          <span class="ch-state err">Error</span>
+        </div>
+        <div class="ch-stats">
+          <div class="ch-stat"><b>180</b><span>Publicados</span></div>
+          <div class="ch-stat warn"><b>76</b><span>Sin mapear</span></div>
+          <div class="ch-stat eur"><b data-eur="36000" data-cfmt="k">36K €</b><span>Venta</span></div>
+        </div>
+        <div class="ch-cov">
+          <div class="cov-head"><span>Cobertura de catálogo</span><b>70%</b></div>
+          <div class="progress" role="progressbar" aria-label="Cobertura de catálogo en Tiendanube" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" aria-valuetext="70%"><i style="width:70%;background:linear-gradient(90deg,#ef4444,#f97316)"></i></div>
+        </div>
+        <div class="ch-foot">
+          <button class="repo-btn" type="button" data-sync="Tiendanube" style="background:var(--neg)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span>Reintentar</span>
+          </button>
+          <span class="ch-sync" data-sync-label style="color:var(--neg)">error <b style="color:var(--neg)">hace 18 min</b></span>
+        </div>
+      </article>
+
+      <!-- Canal: Amazon (Pausado) -->
+      <article class="card channel-card" data-channel="Amazon">
+        <div class="ch-head">
+          <div class="ch-logo" style="--c1:#475569;--c3:rgba(71,85,105,.4)" aria-hidden="true">Az</div>
+          <div class="ch-name">
+            <b>Amazon</b>
+            <span class="ch-sub">Marketplace · Seller</span>
+          </div>
+          <span class="ch-state pause">Pausado</span>
+        </div>
+        <div class="ch-stats">
+          <div class="ch-stat"><b>120</b><span>Publicados</span></div>
+          <div class="ch-stat warn"><b>36</b><span>Sin mapear</span></div>
+          <div class="ch-stat eur"><b data-eur="28000" data-cfmt="k">28K €</b><span>Venta</span></div>
+        </div>
+        <div class="ch-cov">
+          <div class="cov-head"><span>Cobertura de catálogo</span><b>77%</b></div>
+          <div class="progress" role="progressbar" aria-label="Cobertura de catálogo en Amazon" aria-valuenow="77" aria-valuemin="0" aria-valuemax="100" aria-valuetext="77%"><i style="width:77%;--c1:#fbbf24;--c2:#f59e0b"></i></div>
+        </div>
+        <div class="ch-foot">
+          <button class="repo-btn" type="button" data-sync="Amazon" style="background:var(--amber)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 3 14 9-14 9z"/></svg>
+            <span>Reanudar</span>
+          </button>
+          <span class="ch-sync" data-sync-label>pausado <b style="color:#b45309">hace 2 h</b></span>
+        </div>
+      </article>
+
+      <!-- Tarjeta CTA: conectar otro canal -->
+      <article class="card channel-card rc-cta" style="background:linear-gradient(135deg,rgba(139,92,246,.06),rgba(6,182,212,.05));border-color:rgba(139,92,246,.2)">
+        <div class="ch-head">
+          <div class="ch-logo" style="background:var(--grad-brand);box-shadow:0 6px 16px rgba(139,92,246,.35)" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="ch-name">
+            <b>Conectar canal</b>
+            <span class="ch-sub">eBay, PrestaShop, TikTok Shop…</span>
+          </div>
+        </div>
+        <p class="rc-desc" style="margin:0">Añade un nuevo marketplace y publica tu catálogo unificado en minutos. El stock se sincroniza automáticamente en todos los canales.</p>
+        <div class="ch-foot">
+          <button class="repo-btn" type="button" data-sync="nuevo canal" style="background:var(--grad-cv)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span>Conectar</span>
+          </button>
+          <span class="ch-sync">+ integraciones</span>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ===== Gráficos: publicados por canal + ventas por canal ===== -->
+    <section class="row-2" style="margin-top:22px">
+
+      <!-- Barras verticales: productos publicados por canal -->
+      <div class="card" aria-labelledby="chPubTitle">
+        <div class="card-head">
+          <div>
+            <h3 id="chPubTitle">Productos publicados por canal</h3>
+            <div class="sub">2.180 SKUs publicados de 3.214 · reparto por canal</div>
+          </div>
+        </div>
+        <!-- alto máximo de columna = 150px (Mercado Libre = máx = 980) -->
+        <div class="cat-bars" role="img" aria-label="Productos publicados por canal: Mercado Libre 980, Shopify 540, WooCommerce 360, Tiendanube 180, Amazon 120.">
+          <div class="cat-bar v4">
+            <div class="col" style="height:150px"><span class="cv">980</span></div>
+            <div><div class="nm">Mercado Libre</div><div class="sub">45%</div></div>
+          </div>
+          <div class="cat-bar v3">
+            <div class="col" style="height:83px"><span class="cv">540</span></div>
+            <div><div class="nm">Shopify</div><div class="sub">25%</div></div>
+          </div>
+          <div class="cat-bar v2">
+            <div class="col" style="height:55px"><span class="cv">360</span></div>
+            <div><div class="nm">WooCommerce</div><div class="sub">17%</div></div>
+          </div>
+          <div class="cat-bar">
+            <div class="col" style="height:28px"><span class="cv">180</span></div>
+            <div><div class="nm">Tiendanube</div><div class="sub">8%</div></div>
+          </div>
+          <div class="cat-bar v5">
+            <div class="col" style="height:18px"><span class="cv">120</span></div>
+            <div><div class="nm">Amazon</div><div class="sub">5%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut: % de ventas por canal -->
+      <div class="card" aria-labelledby="chSalesTitle">
+        <div class="card-head">
+          <div>
+            <h3 id="chSalesTitle">Ventas por canal</h3>
+            <div class="sub">Venta online del periodo · total <span data-eur="488000" data-cfmt="k">488K €</span></div>
+          </div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut">
+            <!-- r=90 => circunferencia 565. Repartos sobre 488K:
+                 ML 214K=43,9%=>248 · Shopify 132K=27,0%=>153 · Woo 78K=16,0%=>90 ·
+                 Tiendanube 36K=7,4%=>42 · Amazon 28K=5,7%=>32 (suman 565). -->
+            <svg width="240" height="240" viewBox="0 0 240 240" role="img" aria-labelledby="chDonutTitle">
+              <title id="chDonutTitle">Ventas online por canal: Mercado Libre 214.000 € (43,9%), Shopify 132.000 € (27,0%), WooCommerce 78.000 € (16,0%), Tiendanube 36.000 € (7,4%) y Amazon 28.000 € (5,7%). Total 488.000 €.</title>
+              <defs>
+                <linearGradient id="ch1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient>
+                <linearGradient id="ch2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#14b8a6"/></linearGradient>
+                <linearGradient id="ch3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#a855f7"/></linearGradient>
+                <linearGradient id="ch4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient>
+                <linearGradient id="ch5" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#475569"/></linearGradient>
+              </defs>
+              <circle cx="120" cy="120" r="90" fill="none" stroke="rgba(15,23,42,.05)" stroke-width="28"/>
+              <circle cx="120" cy="120" r="90" fill="none" stroke="url(#ch1)" stroke-width="28" stroke-linecap="butt" stroke-dasharray="248 565" stroke-dashoffset="0"/>
+              <circle cx="120" cy="120" r="90" fill="none" stroke="url(#ch2)" stroke-width="28" stroke-linecap="butt" stroke-dasharray="153 565" stroke-dashoffset="-248"/>
+              <circle cx="120" cy="120" r="90" fill="none" stroke="url(#ch3)" stroke-width="28" stroke-linecap="butt" stroke-dasharray="90 565" stroke-dashoffset="-401"/>
+              <circle cx="120" cy="120" r="90" fill="none" stroke="url(#ch4)" stroke-width="28" stroke-linecap="butt" stroke-dasharray="42 565" stroke-dashoffset="-491"/>
+              <circle cx="120" cy="120" r="90" fill="none" stroke="url(#ch5)" stroke-width="28" stroke-linecap="butt" stroke-dasharray="32 565" stroke-dashoffset="-533"/>
+            </svg>
+            <div class="donut-center">
+              <div><b data-eur="488000" data-cfmt="k">488K €</b><span>venta online</span></div>
+            </div>
+          </div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)"></div>
+              <div><div class="l-name">Mercado Libre</div><div class="l-desc">Marketplace líder</div></div>
+              <div class="bar" role="progressbar" aria-label="Cuota de Mercado Libre" aria-valuenow="43.9" aria-valuemin="0" aria-valuemax="100" aria-valuetext="43,9%"><i style="width:43.9%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></i></div>
+              <div class="l-val" data-eur="214000" data-cfmt="k">214K €</div><div class="l-pct">43,9%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)"></div>
+              <div><div class="l-name">Shopify</div><div class="l-desc">Tienda propia</div></div>
+              <div class="bar" role="progressbar" aria-label="Cuota de Shopify" aria-valuenow="27" aria-valuemin="0" aria-valuemax="100" aria-valuetext="27,0%"><i style="width:27%;background:linear-gradient(90deg,#06b6d4,#14b8a6)"></i></div>
+              <div class="l-val" data-eur="132000" data-cfmt="k">132K €</div><div class="l-pct">27,0%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)"></div>
+              <div><div class="l-name">WooCommerce</div><div class="l-desc">WordPress</div></div>
+              <div class="bar" role="progressbar" aria-label="Cuota de WooCommerce" aria-valuenow="16" aria-valuemin="0" aria-valuemax="100" aria-valuetext="16,0%"><i style="width:16%;background:linear-gradient(90deg,#8b5cf6,#a855f7)"></i></div>
+              <div class="l-val" data-eur="78000" data-cfmt="k">78K €</div><div class="l-pct">16,0%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:linear-gradient(135deg,#22d3ee,#06b6d4)"></div>
+              <div><div class="l-name">Tiendanube</div><div class="l-desc">Error de mapeo</div></div>
+              <div class="bar" role="progressbar" aria-label="Cuota de Tiendanube" aria-valuenow="7.4" aria-valuemin="0" aria-valuemax="100" aria-valuetext="7,4%"><i style="width:7.4%;background:linear-gradient(90deg,#22d3ee,#06b6d4)"></i></div>
+              <div class="l-val" data-eur="36000" data-cfmt="k">36K €</div><div class="l-pct">7,4%</div>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:linear-gradient(135deg,#94a3b8,#475569)"></div>
+              <div><div class="l-name">Amazon</div><div class="l-desc">Pausado</div></div>
+              <div class="bar" role="progressbar" aria-label="Cuota de Amazon" aria-valuenow="5.7" aria-valuemin="0" aria-valuemax="100" aria-valuetext="5,7%"><i style="width:5.7%;background:linear-gradient(90deg,#94a3b8,#475569)"></i></div>
+              <div class="l-val" data-eur="28000" data-cfmt="k">28K €</div><div class="l-pct">5,7%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===== Bitácora de sincronización (tiempo real) ===== -->
+    <section class="card" aria-labelledby="syncLogTitle" style="margin-top:22px">
+      <div class="card-head">
+        <div>
+          <h3 id="syncLogTitle">Bitácora de sincronización</h3>
+          <div class="sub">Últimos eventos en tiempo real · publicaciones, stock y mapeos</div>
+        </div>
+        <div class="chip" style="background:linear-gradient(135deg,rgba(20,184,166,.12),rgba(6,182,212,.12));color:#0d9488;border-color:rgba(20,184,166,.2)">
+          <span style="width:6px;height:6px;border-radius:50%;background:#14b8a6;box-shadow:0 0 8px #14b8a6"></span>
+          En vivo
+        </div>
+      </div>
+      <div class="synclog">
+        <div class="synclog-item">
+          <span class="sl-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></span>
+          <span class="sl-tx"><b>Mercado Libre · 12 productos actualizados</b><small>Stock y precio sincronizados correctamente</small></span>
+          <span class="sl-time">hace 2 min</span>
+        </div>
+        <div class="synclog-item">
+          <span class="sl-ic" style="background:linear-gradient(135deg,#ef4444,#f97316)" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+          <span class="sl-tx"><b>Tiendanube · 1 error de mapeo</b><small>SKU SN-1182 sin categoría destino · requiere revisión</small></span>
+          <span class="sl-time">hace 4 min</span>
+        </div>
+        <div class="synclog-item">
+          <span class="sl-ic" style="background:linear-gradient(135deg,#14b8a6,#06b6d4)" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="sl-tx"><b>Shopify · 8 SKUs publicados</b><small>Nuevas variantes de Aurora Runner Pro en línea</small></span>
+          <span class="sl-time">hace 4 min</span>
+        </div>
+        <div class="synclog-item">
+          <span class="sl-ic" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4)" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 7h-9M14 17H5M17 3l3 4-3 4M7 21l-3-4 3-4"/></svg></span>
+          <span class="sl-tx"><b>WooCommerce · 5 mapeos resueltos</b><small>Camisa Linen Breeze enlazada a su categoría</small></span>
+          <span class="sl-time">hace 6 min</span>
+        </div>
+        <div class="synclog-item">
+          <span class="sl-ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></span>
+          <span class="sl-tx"><b>Mercado Libre · stock unificado</b><small>312 u de Aurora Runner Pro propagadas a todos los canales</small></span>
+          <span class="sl-time">hace 9 min</span>
+        </div>
+        <div class="synclog-item">
+          <span class="sl-ic" style="background:linear-gradient(135deg,#94a3b8,#475569)" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></span>
+          <span class="sl-tx"><b>Amazon · canal pausado</b><small>Sincronización detenida por el administrador</small></span>
+          <span class="sl-time">hace 2 h</span>
+        </div>
+      </div>
+    </section>
+  </section><!-- /#view-canales -->
+
+  <!-- VISTA: USUARIOS (cuentas del equipo por usuario/rol · sin email/tel) -->
+  <section class="view" id="view-usuarios" data-view="usuarios" data-title="Usuarios · NemelesInv">
+    <div class="page-head">
+      <div>
+        <div class="crumbs">Dashboard / <b>Usuarios</b> / Permisos</div>
+        <h1>Usuarios y <span class="grad">permisos</span></h1>
+        <p>Cuentas del equipo identificadas por nombre de usuario y rol · Control de acceso por permisos · Sin datos de contacto</p>
+      </div>
+      <div class="toolbar">
+        <a class="chip" href="#overview">← Resumen</a>
+        <button class="chip primary" type="button" id="inviteUserBtn" aria-haspopup="dialog" aria-controls="userModal">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          Invitar usuario
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== KPIs de usuarios ===== -->
+    <section class="kpi-grid" aria-label="Indicadores clave de usuarios y permisos">
+
+      <!-- KPI HÉROE (doble ancho): plantilla y acceso -->
+      <div class="kpi hero" role="group" aria-label="Siete usuarios en el equipo, seis activos y uno inactivo, repartidos en cuatro roles; último acceso hace 3 minutos">
+        <div class="kpi-top">
+          <span class="kpi-label">Usuarios del equipo</span>
+          <div class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        </div>
+        <div class="hero-split">
+          <div>
+            <div class="kpi-value">7 <span style="font-size:18px;font-weight:700;opacity:.85">cuentas</span></div>
+            <div class="kpi-foot"><span class="delta up">6 activas</span><span class="kpi-sub">1 inactiva</span></div>
+          </div>
+          <p class="hero-aside">Acceso controlado por <b>4 roles</b> (Administrador, Almacén, Compras y Ventas) con permisos de <b>ver, editar, eliminar y exportar</b>. Último acceso del equipo <b>hace 3 min</b>. Identificación por usuario, sin datos de contacto.</p>
+        </div>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(20,184,166,.18);--c1:#14b8a6;--c3:rgba(20,184,166,.35)" aria-label="Usuarios activos: 6 de 7">
+        <div class="kpi-top">
+          <span class="kpi-label">Activos</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
+        </div>
+        <div class="kpi-value">6 / 7</div>
+        <div class="kpi-foot"><span class="delta up">86%</span><span class="kpi-sub">de la plantilla</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 18 L10 16 L20 16 L30 12 L40 12 L50 8 L60 8 L70 6" fill="none" stroke="#14b8a6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(139,92,246,.18);--c1:#8b5cf6;--c3:rgba(139,92,246,.35)" aria-label="Roles definidos: 4">
+        <div class="kpi-top">
+          <span class="kpi-label">Roles</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.5 8 8 11 4.5-3 8-6 8-11V5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        </div>
+        <div class="kpi-value">4</div>
+        <div class="kpi-foot"><span class="delta up">Admin · Almacén</span><span class="kpi-sub">Compras · Ventas</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 20 L10 20 L20 14 L30 14 L40 10 L50 10 L60 6 L70 6" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(6,182,212,.18);--c1:#06b6d4;--c3:rgba(6,182,212,.35)" aria-label="Último acceso: hace 3 minutos, usuaria carmen.ortiz">
+        <div class="kpi-top">
+          <span class="kpi-label">Último acceso</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:var(--pos)">hace 3 min</div>
+        <div class="kpi-foot"><span class="delta up">@carmen.ortiz</span><span class="kpi-sub">en línea</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 14 L10 10 L20 16 L30 8 L40 14 L50 9 L60 12 L70 6" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+    </section>
+
+    <!-- ===== Tabla de usuarios ===== -->
+    <section class="card" aria-labelledby="usersTableTitle">
+      <div class="card-head">
+        <div>
+          <h3 id="usersTableTitle">Cuentas del equipo</h3>
+          <div class="sub">7 usuarios · identificados por nombre y usuario · rol, permisos, estado y último acceso</div>
+        </div>
+        <button class="repo-btn" type="button" id="newUserBtn2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+          <span>Nuevo usuario</span>
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table class="sales users">
+          <caption>Usuarios del equipo con su rol, permisos, estado y último acceso. Identificación por nombre y nombre de usuario, sin datos de contacto.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Permisos</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Último acceso</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Administrador -->
+            <tr data-user="@carmen.ortiz">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true">CO</span><span class="u-tx"><b>Carmen Ortiz</b><small>@carmen.ortiz</small></span></span>
+              </th>
+              <td><span class="role-chip admin">Administrador</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm on">Editar</span><span class="perm on">Eliminar</span><span class="perm on">Exportar</span></div></td>
+              <td><span class="state-pill on">Activo</span></td>
+              <td>hace 3 min</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@carmen.ortiz" aria-label="Editar a Carmen Ortiz"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn danger" type="button" data-act="toggle" data-user="@carmen.ortiz" aria-label="Desactivar a Carmen Ortiz"><svg viewBox="0 0 24 24"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10"/></svg></button>
+                </div>
+              </td>
+            </tr>
+            <!-- Almacén -->
+            <tr data-user="@diego.morales">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)">DM</span><span class="u-tx"><b>Diego Morales</b><small>@diego.morales</small></span></span>
+              </th>
+              <td><span class="role-chip almacen">Almacén</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm on">Editar</span><span class="perm">Eliminar</span><span class="perm">Exportar</span></div></td>
+              <td><span class="state-pill on">Activo</span></td>
+              <td>hace 18 min</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@diego.morales" aria-label="Editar a Diego Morales"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn danger" type="button" data-act="toggle" data-user="@diego.morales" aria-label="Desactivar a Diego Morales"><svg viewBox="0 0 24 24"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10"/></svg></button>
+                </div>
+              </td>
+            </tr>
+            <!-- Compras -->
+            <tr data-user="@lucia.fernandez">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">LF</span><span class="u-tx"><b>Lucía Fernández</b><small>@lucia.fernandez</small></span></span>
+              </th>
+              <td><span class="role-chip compras">Compras</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm on">Editar</span><span class="perm">Eliminar</span><span class="perm on">Exportar</span></div></td>
+              <td><span class="state-pill on">Activo</span></td>
+              <td>hace 1 h</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@lucia.fernandez" aria-label="Editar a Lucía Fernández"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn danger" type="button" data-act="toggle" data-user="@lucia.fernandez" aria-label="Desactivar a Lucía Fernández"><svg viewBox="0 0 24 24"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10"/></svg></button>
+                </div>
+              </td>
+            </tr>
+            <!-- Ventas -->
+            <tr data-user="@marcos.reyes">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true" style="background:linear-gradient(135deg,#14b8a6,#06b6d4)">MR</span><span class="u-tx"><b>Marcos Reyes</b><small>@marcos.reyes</small></span></span>
+              </th>
+              <td><span class="role-chip ventas">Ventas</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm on">Editar</span><span class="perm">Eliminar</span><span class="perm">Exportar</span></div></td>
+              <td><span class="state-pill on">Activo</span></td>
+              <td>hace 2 h</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@marcos.reyes" aria-label="Editar a Marcos Reyes"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn danger" type="button" data-act="toggle" data-user="@marcos.reyes" aria-label="Desactivar a Marcos Reyes"><svg viewBox="0 0 24 24"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10"/></svg></button>
+                </div>
+              </td>
+            </tr>
+            <!-- Ventas (segundo) -->
+            <tr data-user="@sofia.castro">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4)">SC</span><span class="u-tx"><b>Sofía Castro</b><small>@sofia.castro</small></span></span>
+              </th>
+              <td><span class="role-chip ventas">Ventas</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm on">Editar</span><span class="perm">Eliminar</span><span class="perm">Exportar</span></div></td>
+              <td><span class="state-pill on">Activo</span></td>
+              <td>ayer</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@sofia.castro" aria-label="Editar a Sofía Castro"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn danger" type="button" data-act="toggle" data-user="@sofia.castro" aria-label="Desactivar a Sofía Castro"><svg viewBox="0 0 24 24"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10"/></svg></button>
+                </div>
+              </td>
+            </tr>
+            <!-- Almacén (segundo) -->
+            <tr data-user="@pablo.nunez">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true" style="background:linear-gradient(135deg,#06b6d4,#14b8a6)">PN</span><span class="u-tx"><b>Pablo Núñez</b><small>@pablo.nunez</small></span></span>
+              </th>
+              <td><span class="role-chip almacen">Almacén</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm on">Editar</span><span class="perm">Eliminar</span><span class="perm">Exportar</span></div></td>
+              <td><span class="state-pill on">Activo</span></td>
+              <td>hace 3 días</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@pablo.nunez" aria-label="Editar a Pablo Núñez"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn danger" type="button" data-act="toggle" data-user="@pablo.nunez" aria-label="Desactivar a Pablo Núñez"><svg viewBox="0 0 24 24"><path d="M18.36 6.64A9 9 0 1 1 5.64 6.64M12 2v10"/></svg></button>
+                </div>
+              </td>
+            </tr>
+            <!-- Inactivo -->
+            <tr data-user="@elena.gil">
+              <th scope="row" class="pname">
+                <span class="u-cell"><span class="u-av" aria-hidden="true" style="background:linear-gradient(135deg,#94a3b8,#475569)">EG</span><span class="u-tx"><b>Elena Gil</b><small>@elena.gil</small></span></span>
+              </th>
+              <td><span class="role-chip compras">Compras</span></td>
+              <td><div class="perms"><span class="perm on">Ver</span><span class="perm">Editar</span><span class="perm">Eliminar</span><span class="perm">Exportar</span></div></td>
+              <td><span class="state-pill off">Inactivo</span></td>
+              <td>hace 2 meses</td>
+              <td>
+                <div class="row-actions">
+                  <button class="act-btn" type="button" data-act="edit" data-user="@elena.gil" aria-label="Editar a Elena Gil"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+                  <button class="act-btn" type="button" data-act="toggle" data-user="@elena.gil" aria-label="Reactivar a Elena Gil"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== Roles y permisos (matriz) ===== -->
+    <section class="card" aria-labelledby="rolesMatrixTitle" style="margin-top:22px">
+      <div class="card-head">
+        <div>
+          <h3 id="rolesMatrixTitle">Roles y permisos</h3>
+          <div class="sub">Qué puede hacer cada rol sobre inventario, pedidos y reportes</div>
+        </div>
+        <div class="chip" style="background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(6,182,212,.12));color:#7c3aed;border-color:rgba(139,92,246,.2)">
+          <span style="width:6px;height:6px;border-radius:50%;background:#8b5cf6;box-shadow:0 0 8px #8b5cf6"></span>
+          4 roles
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="matrix">
+          <caption>Matriz de permisos por rol. Una marca indica que el rol tiene ese permiso.</caption>
+          <thead>
+            <tr>
+              <th scope="col" style="text-align:left">Rol</th>
+              <th scope="col">Ver</th>
+              <th scope="col">Editar</th>
+              <th scope="col">Eliminar</th>
+              <th scope="col">Exportar</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><span class="role-chip admin">Administrador</span></th>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="role-chip almacen">Almacén</span></th>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-no" aria-label="No">—</span></td>
+              <td><span class="mx-no" aria-label="No">—</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="role-chip compras">Compras</span></th>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-no" aria-label="No">—</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+            </tr>
+            <tr>
+              <th scope="row"><span class="role-chip ventas">Ventas</span></th>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-yes" aria-label="Sí">✓</span></td>
+              <td><span class="mx-no" aria-label="No">—</span></td>
+              <td><span class="mx-no" aria-label="No">—</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section><!-- /#view-usuarios -->
+
+  <!-- VISTA: FACTURACIÓN (facturas, cobros y estado fiscal) -->
+  <section class="view" id="view-facturacion" data-view="facturacion" data-title="Facturación · NemelesInv">
+    <div class="page-head">
+      <div>
+        <div class="crumbs">Dashboard / <b>Facturación</b></div>
+        <h1>Facturación y <span class="grad">cobros</span></h1>
+        <p>Facturas emitidas, cobradas y pendientes, e impuestos del periodo · Últimos 60 días</p>
+      </div>
+      <div class="toolbar">
+        <a class="chip" href="#overview">← Resumen</a>
+        <a class="chip primary" href="#ventas">Ver ventas</a>
+      </div>
+    </div>
+
+    <!-- ===== KPIs de facturación ===== -->
+    <section class="kpi-grid" aria-label="Indicadores clave de facturación">
+
+      <!-- KPI HÉROE (doble ancho): facturado del mes -->
+      <div class="kpi hero" role="group" aria-label="Facturado del mes: 248.600 euros, sube 7,4% frente al mes anterior; 31.200 euros pendientes de cobro y 8.400 euros vencidos sobre 326 facturas">
+        <div class="kpi-top">
+          <span class="kpi-label">Facturado del mes</span>
+          <div class="kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></div>
+        </div>
+        <div class="hero-split">
+          <div>
+            <div class="kpi-value" data-eur="248600" data-cfmt="k">248,6K €</div>
+            <div class="kpi-foot"><span class="delta warn">▲ 7,4%</span><span class="kpi-sub">junio 2026</span></div>
+          </div>
+          <p class="hero-aside"><b data-eur="31200" data-cfmt="full">31.200 €</b> pendientes de cobro y <b data-eur="8400" data-cfmt="full">8.400 €</b> vencidos. <b>326 facturas</b> emitidas este mes, el 87,9% ya cobradas.</p>
+        </div>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(245,158,11,.2);--c1:#f59e0b;--c3:rgba(245,158,11,.35)" aria-label="Pendiente de cobro: 31.200 euros, baja 5,1% frente al mes anterior">
+        <div class="kpi-top">
+          <span class="kpi-label">Pendiente de cobro</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        </div>
+        <div class="kpi-value" data-eur="31200" data-cfmt="k">31,2K €</div>
+        <div class="kpi-foot"><span class="delta up">▼ 5,1%</span><span class="kpi-sub">por cobrar</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 8 L10 10 L20 10 L30 14 L40 16 L50 16 L60 20 L70 22" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(239,68,68,.16);--c1:#ef4444;--c3:rgba(239,68,68,.35)" aria-label="Vencido: 8.400 euros, baja 9,3% frente al mes anterior">
+        <div class="kpi-top">
+          <span class="kpi-label">Vencido</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+        </div>
+        <div class="kpi-value" style="color:var(--neg)" data-eur="8400" data-cfmt="k">8,4K €</div>
+        <div class="kpi-foot"><span class="delta up">▼ 9,3%</span><span class="kpi-sub">en mora</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 6 L10 8 L20 10 L30 12 L40 16 L50 16 L60 20 L70 22" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <div class="kpi" style="--tint:rgba(139,92,246,.18);--c1:#8b5cf6;--c3:rgba(139,92,246,.35)" aria-label="Número de facturas del mes: 326, suben 4,8% frente al mes anterior">
+        <div class="kpi-top">
+          <span class="kpi-label">Nº facturas</span>
+          <div class="kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+        </div>
+        <div class="kpi-value">326</div>
+        <div class="kpi-foot"><span class="delta up">▲ 4,8%</span><span class="kpi-sub">emitidas</span></div>
+        <svg class="spark" width="70" height="28" viewBox="0 0 70 28" aria-hidden="true"><path d="M0 20 L10 18 L20 16 L30 16 L40 12 L50 10 L60 8 L70 6" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+    </section>
+
+    <!-- ===== Facturado por mes (mini gráfico SVG de barras) ===== -->
+    <section class="card" aria-labelledby="invChartTitle">
+      <div class="card-head">
+        <div>
+          <h3 id="invChartTitle">Facturado por mes</h3>
+          <div class="sub">Últimos 6 meses · importe facturado en € · cierre <span data-eur="248600" data-cfmt="k">248,6K €</span></div>
+        </div>
+        <div class="chip" style="background:linear-gradient(135deg,rgba(20,184,166,.12),rgba(6,182,212,.12));color:#0d9488;border-color:rgba(20,184,166,.2)">
+          <span style="width:6px;height:6px;border-radius:50%;background:#14b8a6;box-shadow:0 0 8px #14b8a6"></span>
+          ▲ 7,4% mensual
+        </div>
+      </div>
+      <!-- Barras verticales SVG. Eje Y 0–280K, viewBox 720x280.
+           Valores: Ene 182K, Feb 196K, Mar 208K, Abr 221K, May 232K, Jun 248,6K.
+           altura barra = (v/280000)*200 ; base y=240 ; ancho 70, x centrado por mes.
+           Ene 130, Feb 140, Mar 148.6, Abr 157.9, May 165.7, Jun 177.6. -->
+      <svg class="chart-svg" viewBox="0 0 720 280" role="img" aria-labelledby="invChartDesc" style="height:240px">
+        <title id="invChartDesc">Importe facturado por mes en los últimos 6 meses: enero 182.000 €, febrero 196.000 €, marzo 208.000 €, abril 221.000 €, mayo 232.000 € y junio 248.600 €, en progresión creciente.</title>
+        <defs>
+          <linearGradient id="invBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient>
+          <linearGradient id="invBarHi" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#14b8a6"/></linearGradient>
+        </defs>
+        <!-- rejilla + eje Y (0, 70K, 140K, 210K, 280K) -->
+        <line class="grid-line" x1="46" y1="240" x2="720" y2="240"/>
+        <line class="grid-line" x1="46" y1="190" x2="720" y2="190"/>
+        <line class="grid-line" x1="46" y1="140" x2="720" y2="140"/>
+        <line class="grid-line" x1="46" y1="90"  x2="720" y2="90"/>
+        <line class="grid-line" x1="46" y1="40"  x2="720" y2="40"/>
+        <text class="axis-lbl" x="0" y="244">0</text>
+        <text class="axis-lbl" x="0" y="194">70K</text>
+        <text class="axis-lbl" x="0" y="144">140K</text>
+        <text class="axis-lbl" x="0" y="94">210K</text>
+        <text class="axis-lbl" x="0" y="44">280K</text>
+        <!-- barras (x de inicio: 75,185,295,405,515,625 · ancho 70) -->
+        <rect x="75"  y="110"   width="70" height="130"   rx="8" fill="url(#invBar)"/>
+        <rect x="185" y="100"   width="70" height="140"   rx="8" fill="url(#invBar)"/>
+        <rect x="295" y="91.4"  width="70" height="148.6" rx="8" fill="url(#invBar)"/>
+        <rect x="405" y="82.1"  width="70" height="157.9" rx="8" fill="url(#invBar)"/>
+        <rect x="515" y="74.3"  width="70" height="165.7" rx="8" fill="url(#invBar)"/>
+        <rect x="625" y="62.4"  width="70" height="177.6" rx="8" fill="url(#invBarHi)"/>
+        <!-- etiqueta del último mes -->
+        <text class="pt-lbl" x="660" y="54" text-anchor="middle" data-eur="248600" data-cfmt="k">248,6K €</text>
+      </svg>
+      <div class="x-axis" style="padding-left:46px">
+        <span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span>
+      </div>
+    </section>
+
+    <!-- ===== Tabla de facturas ===== -->
+    <section class="card" aria-labelledby="invTableTitle" style="margin-top:22px">
+      <div class="card-head">
+        <div>
+          <h3 id="invTableTitle">Facturas recientes</h3>
+          <div class="sub">Últimas facturas emitidas · cliente por nombre o empresa, sin datos de contacto</div>
+        </div>
+        <button class="repo-btn" type="button" id="newInvoiceBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+          <span>Nueva factura</span>
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table class="sales invoices">
+          <caption>Facturas recientes con su folio, cliente, fecha, monto y estado de cobro. El cliente se identifica solo por nombre o empresa.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Folio</th>
+              <th scope="col">Cliente</th>
+              <th scope="col">Fecha</th>
+              <th scope="col" class="num">Monto (€)</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-invoice="FAC-2026-318">
+              <th scope="row" style="font-weight:700">FAC-2026-318</th>
+              <td>Moda Atlántica S.L.</td>
+              <td>24 jun 2026</td>
+              <td class="num eur"><span data-eur="1078.80" data-cfmt="full">1.078,80 €</span></td>
+              <td><span class="status-pill pend">Pendiente</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-318">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-317">
+              <th scope="row" style="font-weight:700">FAC-2026-317</th>
+              <td>Distribuciones Vega</td>
+              <td>23 jun 2026</td>
+              <td class="num eur"><span data-eur="2154.40" data-cfmt="full">2.154,40 €</span></td>
+              <td><span class="status-pill done">Pagada</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-317">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-316">
+              <th scope="row" style="font-weight:700">FAC-2026-316</th>
+              <td>Marcos Reyes</td>
+              <td>23 jun 2026</td>
+              <td class="num eur"><span data-eur="139.40" data-cfmt="full">139,40 €</span></td>
+              <td><span class="status-pill done">Pagada</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-316">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-315">
+              <th scope="row" style="font-weight:700">FAC-2026-315</th>
+              <td>Boutique Mediterránea</td>
+              <td>22 jun 2026</td>
+              <td class="num eur"><span data-eur="709.10" data-cfmt="full">709,10 €</span></td>
+              <td><span class="status-pill done">Pagada</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-315">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-314">
+              <th scope="row" style="font-weight:700">FAC-2026-314</th>
+              <td>Almacenes del Sur</td>
+              <td>20 jun 2026</td>
+              <td class="num eur"><span data-eur="1612.20" data-cfmt="full">1.612,20 €</span></td>
+              <td><span class="status-pill over">Vencida</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-314">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-313">
+              <th scope="row" style="font-weight:700">FAC-2026-313</th>
+              <td>Comercial Norteña</td>
+              <td>19 jun 2026</td>
+              <td class="num eur"><span data-eur="2986.60" data-cfmt="full">2.986,60 €</span></td>
+              <td><span class="status-pill done">Pagada</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-313">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-312">
+              <th scope="row" style="font-weight:700">FAC-2026-312</th>
+              <td>Lucía Fernández</td>
+              <td>18 jun 2026</td>
+              <td class="num eur"><span data-eur="239.30" data-cfmt="full">239,30 €</span></td>
+              <td><span class="status-pill done">Pagada</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-312">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-311">
+              <th scope="row" style="font-weight:700">FAC-2026-311</th>
+              <td>Sofía Castro</td>
+              <td>17 jun 2026</td>
+              <td class="num eur"><span data-eur="186.50" data-cfmt="full">186,50 €</span></td>
+              <td><span class="status-pill pend">Pendiente</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-311">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-310">
+              <th scope="row" style="font-weight:700">FAC-2026-310</th>
+              <td>Distribuciones Vega</td>
+              <td>15 jun 2026</td>
+              <td class="num eur"><span data-eur="3240.00" data-cfmt="full">3.240,00 €</span></td>
+              <td><span class="status-pill over">Vencida</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-310">Descargar PDF</button></div></td>
+            </tr>
+            <tr data-invoice="FAC-2026-309">
+              <th scope="row" style="font-weight:700">FAC-2026-309</th>
+              <td>Pablo Núñez</td>
+              <td>14 jun 2026</td>
+              <td class="num eur"><span data-eur="349.50" data-cfmt="full">349,50 €</span></td>
+              <td><span class="status-pill done">Pagada</span></td>
+              <td><div class="row-actions"><button class="mini-btn" type="button" data-invoice-act="pdf" data-invoice="FAC-2026-309">Descargar PDF</button></div></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">10 de 326 facturas</td>
+              <td class="num"><span data-eur="12695.80" data-cfmt="full">12.695,80 €</span></td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </section><!-- /#view-facturacion -->
+
+  <!-- ===================== MODAL · INVITAR / NUEVO USUARIO (accesible) =====================
+       Diálogo persistente (vive en <main> pero se posiciona fixed sobre todo).
+       Oculto por defecto; el JS lo abre con .open, atrapa el foco y cierra con
+       Escape / clic-fuera / botón. SIN correo ni teléfono: nombre + usuario +
+       rol + estado. El "guardar" da feedback (toast) sin recargar. -->
+  <div class="modal-overlay" id="userModalOverlay">
+    <div class="modal" id="userModal" role="dialog" aria-modal="true" aria-labelledby="userModalTitle" aria-describedby="userModalDesc">
+      <div class="modal-head">
+        <div>
+          <h3 id="userModalTitle">Invitar usuario</h3>
+          <p id="userModalDesc">Crea una cuenta para el equipo. Se identifica por nombre y usuario, sin datos de contacto.</p>
+        </div>
+        <button class="modal-close" type="button" id="userModalClose" aria-label="Cerrar diálogo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="userForm" novalidate>
+        <div class="field">
+          <label for="um-name">Nombre completo</label>
+          <input type="text" id="um-name" name="name" placeholder="Ej. Ana Beltrán" autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label for="um-username">Nombre de usuario</label>
+          <input type="text" id="um-username" name="username" placeholder="Ej. @ana.beltran" autocomplete="off" required />
+          <p class="hint">Servirá para iniciar sesión. No se piden correo ni teléfono.</p>
+        </div>
+        <div class="field">
+          <label for="um-role">Rol</label>
+          <select id="um-role" name="role">
+            <option value="Administrador">Administrador</option>
+            <option value="Almacén" selected>Almacén</option>
+            <option value="Compras">Compras</option>
+            <option value="Ventas">Ventas</option>
+          </select>
+          <p class="hint">El rol define los permisos (ver, editar, eliminar, exportar).</p>
+        </div>
+        <div class="field">
+          <label for="um-state">Estado</label>
+          <select id="um-state" name="state">
+            <option value="Activo" selected>Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="modal-foot">
+          <button class="chip" type="button" id="userModalCancel">Cancelar</button>
+          <button class="chip primary" type="submit" id="userModalSave">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Guardar usuario
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ===================== 9. FOOTER (conversión · persistente entre vistas) ===================== -->
   <footer class="foot">
     <div class="foot-copy">
@@ -2716,12 +4452,20 @@
 
 </main>
 
-<!-- ===== BARRA DE PESTAÑAS MÓVIL (solo <=900px; usa el mismo router por data-view) ===== -->
+<!-- ===== BARRA DE PESTAÑAS MÓVIL (solo <=900px; usa el mismo router por data-view).
+     Scrollable en horizontal con scroll-snap: caben las 10 secciones con
+     icono+label y TODAS son alcanzables. Mismo orden que el nav de escritorio
+     (principales primero, luego las secundarias del menú "Más"). ===== -->
 <nav class="tabbar" aria-label="Navegación móvil">
   <a href="#overview" data-nav="Overview" data-view="overview" data-title="Overview · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Inicio</a>
   <a href="#inventario" data-nav="Inventario" data-view="inventario" data-title="NemelesInv · Analítica de Inventario Retail"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg>Inventario</a>
+  <a href="#pedidos" data-nav="Pedidos" data-view="pedidos" data-title="Pedidos · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>Pedidos</a>
   <a href="#ventas" data-nav="Ventas" data-view="ventas" data-title="Ventas · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Ventas</a>
+  <a href="#canales" data-nav="Canales" data-view="canales" data-title="Canales · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Canales</a>
+  <a href="#clientes" data-nav="Clientes" data-view="clientes" data-title="Clientes · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</a>
   <a href="#tiendas" data-nav="Tiendas" data-view="tiendas" data-title="Tiendas · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>Tiendas</a>
+  <a href="#usuarios" data-nav="Usuarios" data-view="usuarios" data-title="Usuarios · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuarios</a>
+  <a href="#facturacion" data-nav="Facturación" data-view="facturacion" data-title="Facturación · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>Facturas</a>
   <a href="#reportes" data-nav="Reportes" data-view="reportes" data-title="Reportes · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg>Reportes</a>
 </nav>
 
@@ -3101,9 +4845,18 @@
          · al cargar abre la vista del hash o, si no hay/inválido, Overview.
        Por defecto = OVERVIEW. La vista "inventario" conserva intacto su contenido
        y controles (es el bloque original envuelto en #view-inventario). ------- */
-    var navLinks = Array.prototype.slice.call(document.querySelectorAll('nav.main a[data-view], .tabbar a[data-view]'));
+    /* navLinks: enlaces del nav superior + items del menú "Más" + pestañas móvil.
+       Incluir '.navmore a[data-view]' deja que el router gestione también los
+       items del menú "Más" (activo/aria-current/title). */
+    var navLinks = Array.prototype.slice.call(document.querySelectorAll('nav.main a[data-view], .navmore a[data-view], .tabbar a[data-view]'));
     var views    = Array.prototype.slice.call(document.querySelectorAll('.view[data-view]'));
     var VIEW_DEFAULT = 'overview';
+
+    /* Botón "Más ▾" y el conjunto de vistas que viven bajo él. Cuando la vista
+       activa es una de esas, marcamos el botón "Más" como activo aunque su
+       enlace esté oculto dentro del popover. */
+    var moreBtn = document.getElementById('moreBtn');
+    var MORE_VIEWS = { clientes:1, tiendas:1, usuarios:1, facturacion:1, reportes:1 };
 
     // ¿Existe una vista con ese nombre?
     function viewExists(name) {
@@ -3141,6 +4894,9 @@
         if (on && !titleText) titleText = l.getAttribute('data-title');
       });
 
+      // 2b) Botón "Más ▾": activo si la vista vive dentro de su menú.
+      if (moreBtn) moreBtn.classList.toggle('active', !!MORE_VIEWS[name]);
+
       // 3) <title> del documento según la vista.
       if (titleText) document.title = titleText;
 
@@ -3160,9 +4916,14 @@
       return navLabel;
     }
 
+    // Abre/cierra el menú "Más ▾" reusando el sistema de popover de la cabecera.
+    wirePopover('moreBtn');
+
     navLinks.forEach(function (link) {
       link.addEventListener('click', function (e) {
         e.preventDefault();
+        // Si el enlace está dentro del menú "Más", cerramos el popover al navegar.
+        if (link.closest && link.closest('.navmore')) { closePopover(false); }
         var name = link.getAttribute('data-view') || VIEW_DEFAULT;
         var label = showView(name);
         toast('Sección: ' + label);
@@ -3480,6 +5241,324 @@
       if (!btn || btn.disabled) return;
       downloadReport(btn.getAttribute('data-gen'), btn.getAttribute('data-file'), btn);
     });
+
+    /* ---------- 16) CANALES: sincronizar (feedback, no botón muerto) -------
+       Cada "Sincronizar ahora / Reintentar / Reanudar" da feedback en el propio
+       botón + toast + aria-live y actualiza la etiqueta "última sync" de su
+       tarjeta a "hace instantes". "Sincronizar todo" recorre todas las tarjetas.
+       Delegado por [data-sync]; no usa innerHTML con datos dinámicos. ----- */
+    function syncChannel(card, name) {
+      if (!card) return;
+      var label = card.querySelector('[data-sync-label]');
+      if (label) {
+        // textContent => a prueba de inyección (el nombre del canal es nuestro).
+        label.textContent = '';
+        var t1 = document.createTextNode('última sync ');
+        var b = document.createElement('b');
+        b.style.color = '#0d9488';
+        b.textContent = 'hace instantes';
+        label.appendChild(t1); label.appendChild(b);
+        label.style.color = '';
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-sync]') : null;
+      if (!btn) return;
+      var name = btn.getAttribute('data-sync') || 'canal';
+      var card = btn.closest ? btn.closest('.channel-card') : null;
+      var span = btn.querySelector('span');
+      var prev = span ? span.textContent : '';
+      if (name === 'nuevo canal') {
+        toast('Asistente de conexión de canal — demo');
+        announce('Asistente de conexión de canal.');
+        return;
+      }
+      syncChannel(card, name);
+      var msg = 'Sincronizando ' + name + '… catálogo y stock';
+      toast(msg); announce(msg);
+      if (span) {
+        span.textContent = 'Sincronizado ✓';
+        setTimeout(function () { span.textContent = prev; }, 2200);
+      }
+    });
+
+    var syncAllBtn = document.getElementById('syncAllBtn');
+    if (syncAllBtn) {
+      var syncAllText = syncAllBtn.querySelector('[data-syncall-text]');
+      var syncAllPrev = syncAllText ? syncAllText.textContent : 'Sincronizar todo';
+      var syncAllBusy = false;
+      syncAllBtn.addEventListener('click', function () {
+        if (syncAllBusy) return;
+        syncAllBusy = true;
+        Array.prototype.forEach.call(document.querySelectorAll('.channel-card[data-channel]'), function (card) {
+          syncChannel(card, card.getAttribute('data-channel') || 'canal');
+        });
+        var msg = 'Sincronización completa · 5 canales · 2.180 productos';
+        toast(msg); announce(msg);
+        if (syncAllText) syncAllText.textContent = 'Sincronizado ✓';
+        setTimeout(function () {
+          if (syncAllText) syncAllText.textContent = syncAllPrev;
+          syncAllBusy = false;
+        }, 2200);
+      });
+    }
+
+    /* ---------- 16.b) PEDIDOS / CLIENTES / FACTURAS: acciones por fila --------
+       Botones "Ver / Procesar / Ver perfil / Descargar PDF / Nueva factura".
+       Sin botones muertos: cada uno da feedback (toast + aria-live) y un texto
+       efímero en el propio botón. "Procesar" además adelanta el estado de la
+       fila en la pill. El PDF se genera 100% offline vía data: URI (sin red).
+       Delegado; lee SOLO de atributos/textContent propios (nunca innerHTML). */
+
+    // Feedback efímero en el <span>/texto del botón sin tocar su estructura.
+    function flashBtn(btn, label) {
+      if (!btn) return;
+      var span = btn.querySelector('span');
+      var target = span || btn;
+      var prev = target.textContent;
+      target.textContent = label;
+      setTimeout(function () { target.textContent = prev; }, 2200);
+    }
+
+    // PEDIDOS: ver / procesar
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-order-act]') : null;
+      if (!btn) return;
+      var act = btn.getAttribute('data-order-act');
+      var folio = btn.getAttribute('data-order') || 'pedido';
+      var row = btn.closest ? btn.closest('tr') : null;
+      if (act === 'ver') {
+        var msg = 'Pedido ' + folio + ' — detalle (demo)';
+        toast(msg); announce(msg);
+        flashBtn(btn, 'Abierto ✓');
+      } else if (act === 'procesar') {
+        // Adelanta el estado en la pill: Pendiente → Procesando → Enviado → Completado.
+        var pill = row ? row.querySelector('.status-pill') : null;
+        if (pill) {
+          var flow = ['pend', 'proc', 'ship', 'done'];
+          var labels = { pend: 'Pendiente', proc: 'Procesando', ship: 'Enviado', done: 'Completado' };
+          var cur = -1;
+          for (var i = 0; i < flow.length; i++) { if (pill.classList.contains(flow[i])) { cur = i; break; } }
+          if (cur >= 0 && cur < flow.length - 1) {
+            pill.classList.remove(flow[cur]);
+            pill.classList.add(flow[cur + 1]);
+            pill.textContent = labels[flow[cur + 1]];
+            var m = 'Pedido ' + folio + ' → ' + labels[flow[cur + 1]];
+            toast(m); announce(m);
+          } else if (cur === flow.length - 1) {
+            var m2 = 'Pedido ' + folio + ' ya está completado';
+            toast(m2); announce(m2);
+          } else {
+            var m3 = 'Pedido ' + folio + ' cancelado — no se puede procesar';
+            toast(m3); announce(m3);
+          }
+        }
+        flashBtn(btn, 'Hecho ✓');
+      }
+    });
+
+    // CLIENTES: ver perfil
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-customer-act]') : null;
+      if (!btn) return;
+      var who = btn.getAttribute('data-customer') || 'cliente';
+      var msg = 'Perfil de ' + who + ' (demo)';
+      toast(msg); announce(msg);
+      flashBtn(btn, 'Abierto ✓');
+    });
+
+    // FACTURAS: descargar PDF (data: URI, 100% offline) + nueva factura
+    function downloadInvoice(folio, row, btn) {
+      var cliente = '';
+      var fecha = '';
+      var monto = '';
+      var estado = '';
+      if (row) {
+        var cells = row.querySelectorAll('td, th');
+        // 0=folio(th) ya lo tenemos; mapeamos por las celdas conocidas.
+        var c = row.querySelector('td');                 // 1ª td = cliente
+        if (c) cliente = c.textContent.trim();
+        var tds = row.querySelectorAll('td');
+        if (tds[1]) fecha = tds[1].textContent.trim();   // fecha
+        var montoEl = row.querySelector('.eur span');
+        if (montoEl) monto = montoEl.textContent.trim(); // ya formateado en la moneda activa
+        var pill = row.querySelector('.status-pill');
+        if (pill) estado = pill.textContent.trim();
+      }
+      try {
+        var txt =
+          'FACTURA ' + folio + '\n' +
+          '--------------------------------\n' +
+          'Cliente: ' + cliente + '\n' +
+          'Fecha:   ' + fecha + '\n' +
+          'Importe: ' + monto + '\n' +
+          'Estado:  ' + estado + '\n' +
+          '--------------------------------\n' +
+          'NemelesInv · documento de demostración (sin valor fiscal).\n';
+        var uri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
+        var a = document.createElement('a');
+        a.href = uri;
+        a.download = folio + '.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        var msg = 'Factura ' + folio + ' descargada';
+        toast(msg); announce(msg);
+        flashBtn(btn, 'Descargada ✓');
+      } catch (err) {
+        announce('No se pudo generar la factura en este navegador.');
+        toast('No se pudo generar la factura');
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-invoice-act]') : null;
+      if (!btn) return;
+      var folio = btn.getAttribute('data-invoice') || 'factura';
+      var row = btn.closest ? btn.closest('tr') : null;
+      downloadInvoice(folio, row, btn);
+    });
+
+    var newInvoiceBtn = document.getElementById('newInvoiceBtn');
+    if (newInvoiceBtn) {
+      newInvoiceBtn.addEventListener('click', function () {
+        var msg = 'Asistente de nueva factura — demo';
+        toast(msg); announce(msg);
+        flashBtn(newInvoiceBtn, 'Nueva factura ✓');
+      });
+    }
+
+    /* ---------- 17) USUARIOS: acciones por fila (editar / activar) ----------
+       Delegado por [data-act]. "edit" abre el modal precargado con los datos de
+       la fila; "toggle" alterna la pill Activo/Inactivo y da feedback. Lee SOLO
+       de atributos/textContent propios; nunca inyecta HTML del usuario. ----- */
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('[data-act]') : null;
+      if (!btn) return;
+      var act = btn.getAttribute('data-act');
+      var user = btn.getAttribute('data-user') || '';
+      var row = btn.closest ? btn.closest('tr') : null;
+      if (act === 'edit') {
+        openUserModal(row);
+      } else if (act === 'toggle') {
+        var pill = row ? row.querySelector('.state-pill') : null;
+        if (pill) {
+          var nowActive = pill.classList.contains('on');
+          pill.classList.toggle('on', !nowActive);
+          pill.classList.toggle('off', nowActive);
+          pill.textContent = nowActive ? 'Inactivo' : 'Activo';
+          // Reetiqueta el botón para el siguiente toggle (accesible).
+          var nameEl = row.querySelector('.u-tx b');
+          var who = nameEl ? nameEl.textContent : user;
+          btn.setAttribute('aria-label', (nowActive ? 'Reactivar a ' : 'Desactivar a ') + who);
+          var msg = who + (nowActive ? ' desactivado' : ' reactivado');
+          toast(msg); announce(msg);
+        }
+      }
+    });
+
+    /* ---------- 18) MODAL "Invitar / Nuevo usuario" (accesible) -------------
+       Abre con foco al primer campo, atrapa el Tab dentro del panel, cierra con
+       Escape / clic-fuera / Cancelar y devuelve el foco al disparador. El envío
+       no recarga: valida lo mínimo y da feedback por toast + aria-live. ----- */
+    var userModalOverlay = document.getElementById('userModalOverlay');
+    var userModal        = document.getElementById('userModal');
+    var userForm         = document.getElementById('userForm');
+    var modalTitle       = document.getElementById('userModalTitle');
+    var modalLastTrigger = null;
+
+    function modalFocusables() {
+      if (!userModal) return [];
+      return Array.prototype.slice.call(
+        userModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      ).filter(function (el) { return !el.disabled && el.offsetParent !== null; });
+    }
+
+    function openUserModal(row) {
+      if (!userModalOverlay) return;
+      modalLastTrigger = document.activeElement;
+      // Reset / precarga
+      if (userForm) userForm.reset();
+      if (row) {
+        if (modalTitle) modalTitle.textContent = 'Editar usuario';
+        var nameEl = row.querySelector('.u-tx b');
+        var userEl = row.querySelector('.u-tx small');
+        var roleEl = row.querySelector('.role-chip');
+        var stateEl = row.querySelector('.state-pill');
+        var nIn = document.getElementById('um-name');
+        var uIn = document.getElementById('um-username');
+        var rIn = document.getElementById('um-role');
+        var sIn = document.getElementById('um-state');
+        if (nIn && nameEl) nIn.value = nameEl.textContent;
+        if (uIn && userEl) uIn.value = userEl.textContent;
+        if (rIn && roleEl) rIn.value = (roleEl.textContent || '').trim();
+        if (sIn && stateEl) sIn.value = stateEl.classList.contains('on') ? 'Activo' : 'Inactivo';
+      } else if (modalTitle) {
+        modalTitle.textContent = 'Invitar usuario';
+      }
+      userModalOverlay.classList.add('open');
+      var f = modalFocusables();
+      var firstField = document.getElementById('um-name');
+      if (firstField && firstField.focus) firstField.focus();
+      else if (f[0] && f[0].focus) f[0].focus();
+    }
+
+    function closeUserModal() {
+      if (!userModalOverlay) return;
+      userModalOverlay.classList.remove('open');
+      if (modalLastTrigger && typeof modalLastTrigger.focus === 'function') modalLastTrigger.focus();
+    }
+
+    var inviteBtn = document.getElementById('inviteUserBtn');
+    var newUserBtn2 = document.getElementById('newUserBtn2');
+    if (inviteBtn) inviteBtn.addEventListener('click', function () { openUserModal(null); });
+    if (newUserBtn2) newUserBtn2.addEventListener('click', function () { openUserModal(null); });
+
+    var userModalClose  = document.getElementById('userModalClose');
+    var userModalCancel = document.getElementById('userModalCancel');
+    if (userModalClose)  userModalClose.addEventListener('click', closeUserModal);
+    if (userModalCancel) userModalCancel.addEventListener('click', closeUserModal);
+
+    if (userModalOverlay) {
+      // Clic en el fondo (fuera del panel) cierra.
+      userModalOverlay.addEventListener('click', function (e) {
+        if (e.target === userModalOverlay) closeUserModal();
+      });
+      // Escape cierra; Tab queda atrapado dentro del diálogo.
+      userModalOverlay.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.stopPropagation(); closeUserModal(); return; }
+        if (e.key === 'Tab') {
+          var f = modalFocusables();
+          if (!f.length) return;
+          var first = f[0], last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      });
+    }
+
+    if (userForm) {
+      userForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var nIn = document.getElementById('um-name');
+        var uIn = document.getElementById('um-username');
+        var rIn = document.getElementById('um-role');
+        var name = nIn ? String(nIn.value || '').trim() : '';
+        var user = uIn ? String(uIn.value || '').trim() : '';
+        var role = rIn ? rIn.value : '';
+        if (!name || !user) {
+          var warn = 'Indica nombre y usuario para continuar.';
+          toast(warn); announce(warn);
+          if (!name && nIn && nIn.focus) nIn.focus();
+          else if (uIn && uIn.focus) uIn.focus();
+          return;
+        }
+        closeUserModal();
+        var ok = 'Usuario guardado: ' + name + ' · ' + role + ' — demo';
+        toast(ok); announce(ok);
+      });
+    }
   })();
 </script>
 
