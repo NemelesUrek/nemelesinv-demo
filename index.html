@@ -1418,7 +1418,7 @@
       <label for="curSelect" class="sr-only">Moneda</label>
       <select id="curSelect" class="cur-select" aria-label="Moneda">
         <option value="EUR">€ EUR</option>
-        <option value="USD">US$ USD</option>
+        <option value="USD" selected>US$ USD</option>
         <option value="MXN">$ MXN</option>
         <option value="COP">$ COP</option>
         <option value="GBP">£ GBP</option>
@@ -4678,7 +4678,7 @@
       COP: { symbol: '$',   code: 'COP', rate: 4300, locale: 'es-CO', pos: 'before' },
       GBP: { symbol: '£',   code: 'GBP', rate: 0.85, locale: 'en-GB', pos: 'before' }
     };
-    var CUR_KEY = 'nemelesinv-cur';
+    var CUR_KEY = 'nemelesinv-cur2';
 
     function nfmt(locale, value, decimals) {
       // Intl está en todo navegador moderno y NO usa red; con respaldo defensivo.
@@ -4724,10 +4724,10 @@
     }
 
     if (curSelect) {
-      // Restaura la última elección (si la hay y es válida), si no EUR.
+      // Restaura la última elección (si la hay y es válida), si no USD (predeterminado).
       var saved = null;
       try { saved = window.localStorage.getItem(CUR_KEY); } catch (e) { saved = null; }
-      if (saved && CURRENCIES[saved]) curSelect.value = saved;
+      curSelect.value = (saved && CURRENCIES[saved]) ? saved : 'USD';
 
       curSelect.addEventListener('change', function () {
         var code = curSelect.value;
