@@ -1283,6 +1283,8 @@
   .ag-d-row:last-child{border-bottom:none}
   .ag-d-k{color:var(--muted,#6b7280);font-size:13px}
   .ag-d-v{color:var(--text,#111827);font-weight:700}
+  .ag-link{display:inline-block;margin-top:10px;color:#7c3aed;font-weight:600;font-size:13px;text-decoration:none}
+  .ag-link:hover{text-decoration:underline}
   @media (max-width:560px){ .ag-kpis{grid-template-columns:1fr} .cal-cell{min-height:60px} .cal-dow span{font-size:9px} }
 </style>
 </head>
@@ -5812,10 +5814,18 @@
       if (t) t.textContent = dn + ' de ' + MES[mo];
       if (b) b.innerHTML =
         '<div class="ag-d-row"><span class="ag-d-k">Ventas del día</span><span class="ag-d-v">' + ven + '</span></div>' +
-        '<div class="ag-d-row"><span class="ag-d-k">Entrega prevista</span><span class="ag-d-v">' + (ent ? ('📦 ' + ent) : '—') + '</span></div>';
+        '<div class="ag-d-row"><span class="ag-d-k">Entrega prevista</span><span class="ag-d-v">' + (ent ? ('📦 ' + ent) : '—') + '</span></div>' +
+        (ent ? '<a class="ag-link" data-go="pedidos" href="#pedidos">Ver en Pedidos →</a>' : '');
       var sels = grid.querySelectorAll('.cal-cell.sel');
       for (var k = 0; k < sels.length; k++) sels[k].classList.remove('sel');
       cell.classList.add('sel');
+    });
+    document.addEventListener('click', function(e){
+      var t = (e.target && e.target.closest) ? e.target.closest('.ag-link[data-go]') : null;
+      if (!t) return;
+      e.preventDefault();
+      var nav = document.querySelector('a[data-view="' + t.getAttribute('data-go') + '"]');
+      if (nav) nav.click();
     });
     function pad(n){ return String(n).length < 2 ? '0' + n : '' + n; }
     function exportCsv(){
