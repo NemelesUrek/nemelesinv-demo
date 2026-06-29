@@ -1286,9 +1286,66 @@
   .ag-link{display:inline-block;margin-top:10px;color:#7c3aed;font-weight:600;font-size:13px;text-decoration:none}
   .ag-link:hover{text-decoration:underline}
   @media (max-width:560px){ .ag-kpis{grid-template-columns:1fr} .cal-cell{min-height:60px} .cal-dow span{font-size:9px} }
+  /* ===== Login + control de acceso (DEMO de UX, no seguridad real) ===== */
+  .login-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#5b21b6,#7c3aed 45%,#06b6d4);overflow:auto}
+  .login-overlay.hidden{display:none}
+  .login-card{background:#fff;border-radius:22px;padding:30px 30px 24px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(0,0,0,.30)}
+  .login-logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:800;color:#111827;margin-bottom:14px}
+  .login-logo .ni-badge{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#7c3aed);color:#fff;font-size:13px}
+  .login-logo b{color:#7c3aed}
+  .login-card h2{margin:0 0 2px;font-size:20px;color:#111827}
+  .login-sub{margin:0 0 16px;color:#6b7280;font-size:13px}
+  .login-card label{display:block;font-size:12px;font-weight:600;color:#374151;margin:10px 0 5px}
+  .login-card input{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #e5e7eb;border-radius:11px;font-size:14px}
+  .login-card input:focus{outline:2px solid #7c3aed;border-color:#7c3aed}
+  .login-err{color:#dc2626;font-size:13px;margin-top:8px;min-height:16px}
+  .login-btn{width:100%;margin-top:14px;padding:12px;border:none;border-radius:11px;background:#7c3aed;color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+  .login-btn:hover{background:#6d28d9}
+  .login-hint{margin-top:18px;padding-top:14px;border-top:1px solid #eee;font-size:12px;color:#6b7280}
+  .login-accts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .login-acct{border:1px solid #e5e7eb;border-radius:9px;padding:5px 9px;cursor:pointer;font-size:11.5px;color:#4b5563;background:#faf9ff}
+  .login-acct:hover{border-color:#7c3aed;color:#7c3aed}
+  .login-acct b{color:#7c3aed}
+  .acc-table{width:100%;border-collapse:collapse;font-size:13px}
+  .acc-table th,.acc-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#e5e7eb)}
+  .acc-table th{color:var(--muted,#6b7280);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .acc-table select{padding:5px 8px;border:1px solid var(--line,#e5e7eb);border-radius:8px;background:var(--card,#fff);color:var(--text,#111827)}
+  .acc-del{color:#dc2626;background:none;border:none;cursor:pointer;font-weight:600}
+  .acc-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .acc-add input,.acc-add select{padding:9px 11px;border:1px solid var(--line,#e5e7eb);border-radius:10px;font-size:13px;background:var(--card,#fff);color:var(--text,#111827)}
+  .acc-matrix-wrap{overflow-x:auto}
+  .acc-matrix{border-collapse:collapse;font-size:12.5px;min-width:560px}
+  .acc-matrix th,.acc-matrix td{padding:7px 9px;border:1px solid var(--line,#e5e7eb);text-align:center}
+  .acc-matrix th:first-child,.acc-matrix td:first-child{text-align:left;color:var(--text,#111827);font-weight:600;text-transform:capitalize}
+  .acc-matrix input{width:16px;height:16px;accent-color:#7c3aed;cursor:pointer}
+  .theme-dark .login-card{background:#141a2c}
+  .theme-dark .login-card h2,.theme-dark .login-logo{color:#e8ecf6}
+  .theme-dark .login-card input{background:#1f273b;border-color:rgba(255,255,255,.12);color:#e8ecf6}
+  .theme-dark .login-hint,.theme-dark .login-sub{color:#9aa6be}
 </style>
 </head>
 <body>
+<!-- ===== LOGIN (DEMO de control de acceso por roles — NO es seguridad real) ===== -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-card">
+    <div class="login-logo"><span class="ni-badge">NI</span> Nemeles<b>Inv</b></div>
+    <h2>Iniciar sesión</h2>
+    <p class="login-sub">Demo de acceso por roles y permisos.</p>
+    <form id="loginForm" autocomplete="off">
+      <label for="loginUser">Usuario</label>
+      <input type="text" id="loginUser" placeholder="usuario" autocomplete="username" required>
+      <label for="loginPass">Contraseña</label>
+      <input type="password" id="loginPass" placeholder="contraseña" autocomplete="current-password" required>
+      <div class="login-err" id="loginErr" role="alert"></div>
+      <button type="submit" class="login-btn">Entrar</button>
+    </form>
+    <div class="login-hint">
+      <b>Cuentas de prueba (clic para autocompletar):</b>
+      <div class="login-accts" id="loginAccts"></div>
+      <small>⚠️ Demo de UX: en una página estática esto NO protege de verdad (las claves van en el código). La seguridad real necesita un backend.</small>
+    </div>
+  </div>
+</div>
 
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
 <!-- Región viva para anuncios (exportación, etc.) a lectores de pantalla -->
@@ -1342,6 +1399,10 @@
           <a class="pop-item" role="menuitem" href="#agenda" data-nav="Agenda" data-view="agenda" data-title="Agenda · NemelesInv">
             <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
             Agenda
+          </a>
+          <a class="pop-item" role="menuitem" href="#acceso" data-nav="Acceso" data-view="acceso" data-title="Acceso · NemelesInv" id="navAcceso">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 1l9 4v6c0 5-3.8 9-9 11-5.2-2-9-6-9-11V5z"/><path d="M9 12l2 2 4-4"/></svg></span>
+            Acceso
           </a>
         </div>
       </div>
@@ -1400,12 +1461,14 @@
         </div>
       </div>
       <div class="profile">
-        <!-- IMG: avatar del usuario (decorativo: el nombre está en el texto) -->
-        <div class="avatar" aria-hidden="true">NM</div>
+        <div class="avatar" aria-hidden="true" id="userAvatar">NM</div>
         <div class="profile-info">
-          <b>Nemeles</b>
-          <small>Retail Planner</small>
+          <b id="userName">Nemeles</b>
+          <small id="userRole">Retail Planner</small>
         </div>
+        <button class="icon-btn" type="button" id="logoutBtn" title="Cerrar sesión" aria-label="Cerrar sesión" style="margin-left:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
       </div>
     </div>
   </div>
@@ -4556,6 +4619,32 @@
     </div>
   </section>
 
+  <!-- ===== SPA · VISTA: ACCESO (gestión de usuarios + permisos — solo admin) ===== -->
+  <section class="view" id="view-acceso" data-view="acceso" data-title="Acceso · NemelesInv">
+    <div class="ag-head">
+      <div>
+        <h1>Control de acceso</h1>
+        <p>Gestiona usuarios, sus roles y qué puede ver cada rol. Solo el administrador entra aquí.</p>
+      </div>
+    </div>
+    <div class="ag-card">
+      <div class="cal-head"><h3>Usuarios</h3></div>
+      <div id="accUsers"></div>
+      <div class="acc-add">
+        <input id="nuUser" placeholder="usuario" aria-label="usuario">
+        <input id="nuName" placeholder="nombre" aria-label="nombre">
+        <input id="nuPass" placeholder="contraseña" aria-label="contraseña">
+        <select id="nuRole" aria-label="rol"></select>
+        <button class="ag-csv" id="nuAdd" type="button">+ Agregar usuario</button>
+      </div>
+    </div>
+    <div class="ag-card">
+      <div class="cal-head"><h3>Permisos por rol · ¿quién ve qué?</h3></div>
+      <div id="accMatrix" class="acc-matrix-wrap"></div>
+      <button class="ag-csv" id="accSave" type="button" style="margin-top:14px">Guardar permisos</button>
+    </div>
+  </section>
+
 </main>
 
 <!-- ===== BARRA DE PESTAÑAS MÓVIL (solo <=900px; usa el mismo router por data-view).
@@ -5865,6 +5954,141 @@
         if (c) c.click();
       }
     })();
+  })();
+  /* ===== AUTH + RBAC (DEMO de control de acceso por roles — NO es seguridad real) ===== */
+  (function(){
+    var ALL_VIEWS = ['overview','inventario','pedidos','ventas','canales','clientes','tiendas','usuarios','facturacion','reportes','agenda'];
+    var VIEW_LABEL = {overview:'Overview',inventario:'Inventario',pedidos:'Pedidos',ventas:'Ventas',canales:'Canales',clientes:'Clientes',tiendas:'Tiendas',usuarios:'Usuarios',facturacion:'Facturación',reportes:'Reportes',agenda:'Agenda'};
+    var DEF_ROLES = {
+      admin:    {nombre:'Administrador', views: ALL_VIEWS.slice(), admin:true},
+      gerente:  {nombre:'Gerente',       views:['overview','inventario','pedidos','ventas','canales','clientes','tiendas','reportes','agenda'], admin:false},
+      ventas:   {nombre:'Ventas',        views:['overview','ventas','pedidos','clientes','agenda'], admin:false},
+      almacen:  {nombre:'Almacén',       views:['overview','inventario','pedidos','agenda'], admin:false},
+      consulta: {nombre:'Solo lectura',  views:['overview','reportes','ventas'], admin:false}
+    };
+    var DEF_USERS = [
+      {user:'admin',    pass:'Admin#2026',    rol:'admin',    nombre:'Administrador'},
+      {user:'gerente',  pass:'Gerente#2026',  rol:'gerente',  nombre:'Laura Gerente'},
+      {user:'ventas',   pass:'Ventas#2026',   rol:'ventas',   nombre:'Diego Ventas'},
+      {user:'almacen',  pass:'Almacen#2026',  rol:'almacen',  nombre:'Sara Almacen'},
+      {user:'consulta', pass:'Consulta#2026', rol:'consulta', nombre:'Invitado'}
+    ];
+    var UKEY='nemelesinv-users', RKEY='nemelesinv-roles', SKEY='nemelesinv-session';
+    function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def; }catch(e){ return def; } }
+    function save(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+    function notify(m){ if (typeof toast==='function') toast(m); }
+    var users = load(UKEY, DEF_USERS);
+    var roles = load(RKEY, DEF_ROLES);
+    Object.keys(DEF_ROLES).forEach(function(r){ if(!roles[r]) roles[r]=DEF_ROLES[r]; });
+    var overlay = document.getElementById('loginOverlay');
+    var current = null;
+
+    function rolDe(u){ return roles[u.rol] || DEF_ROLES.consulta; }
+    function iniciales(nombre){
+      var p=(nombre||'U').replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ ]/g,' ').trim().split(/\s+/);
+      return (p.map(function(s){return s[0]||'';}).join('').slice(0,2)||'U').toUpperCase();
+    }
+    function allowDe(r){ var a=(r.views||[]).slice(); if(r.admin) a.push('acceso'); return a; }
+
+    function applyRbac(){
+      var r=rolDe(current), allow=allowDe(r);
+      document.querySelectorAll('a[data-view]').forEach(function(el){
+        el.style.display = (allow.indexOf(el.getAttribute('data-view'))!==-1) ? '' : 'none';
+      });
+      var act=document.querySelector('.view.active');
+      var actV=act?act.getAttribute('data-view'):null;
+      if (!actV || allow.indexOf(actV)===-1){
+        var first=allow.filter(function(v){return v!=='acceso';})[0]||'overview';
+        var link=document.querySelector('a[data-view="'+first+'"]');
+        if (link) link.click();
+      }
+      var n=document.getElementById('userName'), ro=document.getElementById('userRole'), av=document.getElementById('userAvatar');
+      if(n)n.textContent=current.nombre; if(ro)ro.textContent=r.nombre; if(av)av.textContent=iniciales(current.nombre);
+    }
+    function login(u,p){
+      var f=users.filter(function(x){return x.user===u && x.pass===p;})[0];
+      if(!f) return false;
+      current=f; try{ sessionStorage.setItem(SKEY,u); }catch(e){}
+      overlay.classList.add('hidden'); applyRbac();
+      if(rolDe(current).admin) renderAcceso();
+      notify('Bienvenido, '+f.nombre); return true;
+    }
+    function logout(){
+      current=null; try{ sessionStorage.removeItem(SKEY); }catch(e){}
+      overlay.classList.remove('hidden');
+      document.querySelectorAll('a[data-view]').forEach(function(el){ el.style.display=''; });
+      var le=document.getElementById('loginErr'); if(le)le.textContent='';
+      var lp=document.getElementById('loginPass'); if(lp)lp.value='';
+    }
+
+    var accts=document.getElementById('loginAccts');
+    if(accts){
+      accts.innerHTML=users.map(function(u){ return '<span class="login-acct" data-u="'+u.user+'" data-p="'+u.pass+'"><b>'+u.user+'</b> · '+(roles[u.rol]?roles[u.rol].nombre:u.rol)+'</span>'; }).join('');
+      accts.addEventListener('click', function(e){
+        var c=e.target.closest('.login-acct'); if(!c)return;
+        document.getElementById('loginUser').value=c.getAttribute('data-u');
+        document.getElementById('loginPass').value=c.getAttribute('data-p');
+      });
+    }
+    var form=document.getElementById('loginForm');
+    if(form) form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var u=document.getElementById('loginUser').value.trim(), p=document.getElementById('loginPass').value;
+      if(!login(u,p)) document.getElementById('loginErr').textContent='Usuario o contraseña incorrectos.';
+    });
+    var lo=document.getElementById('logoutBtn'); if(lo) lo.addEventListener('click', logout);
+
+    function renderAcceso(){
+      var ut='<table class="acc-table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th></th></tr></thead><tbody>';
+      users.forEach(function(u,i){
+        ut+='<tr><td>'+u.user+'</td><td>'+u.nombre+'</td><td><select data-ui="'+i+'">'+
+          Object.keys(roles).map(function(r){ return '<option value="'+r+'"'+(u.rol===r?' selected':'')+'>'+roles[r].nombre+'</option>'; }).join('')+
+          '</select></td><td>'+(u.user==='admin'?'':'<button class="acc-del" data-del="'+i+'">Eliminar</button>')+'</td></tr>';
+      });
+      ut+='</tbody></table>';
+      var au=document.getElementById('accUsers'); if(au)au.innerHTML=ut;
+      var nr=document.getElementById('nuRole'); if(nr)nr.innerHTML=Object.keys(roles).map(function(r){return '<option value="'+r+'">'+roles[r].nombre+'</option>';}).join('');
+      var mt='<table class="acc-matrix"><thead><tr><th>Rol \\ Vista</th>'+ALL_VIEWS.map(function(v){return '<th>'+VIEW_LABEL[v]+'</th>';}).join('')+'</tr></thead><tbody>';
+      Object.keys(roles).forEach(function(r){
+        mt+='<tr><td>'+roles[r].nombre+'</td>'+ALL_VIEWS.map(function(v){
+          var ck=(roles[r].views||[]).indexOf(v)!==-1?' checked':''; var dis=(r==='admin')?' disabled':'';
+          return '<td><input type="checkbox" data-r="'+r+'" data-v="'+v+'"'+ck+dis+'></td>';
+        }).join('')+'</tr>';
+      });
+      mt+='</tbody></table>';
+      var am=document.getElementById('accMatrix'); if(am)am.innerHTML=mt;
+    }
+    document.addEventListener('change', function(e){
+      var sel=e.target&&e.target.closest?e.target.closest('select[data-ui]'):null;
+      if(sel){ var i=+sel.getAttribute('data-ui'); if(users[i]){ users[i].rol=sel.value; save(UKEY,users); applyRbac(); notify('Rol actualizado'); } }
+    });
+    document.addEventListener('click', function(e){
+      var del=e.target&&e.target.closest?e.target.closest('button[data-del]'):null;
+      if(del){ var i=+del.getAttribute('data-del'); if(users[i]&&users[i].user!=='admin'){ users.splice(i,1); save(UKEY,users); renderAcceso(); notify('Usuario eliminado'); } }
+    });
+    var addBtn=document.getElementById('nuAdd');
+    if(addBtn) addBtn.addEventListener('click', function(){
+      var u=document.getElementById('nuUser').value.trim(), n=document.getElementById('nuName').value.trim(), p=document.getElementById('nuPass').value, r=document.getElementById('nuRole').value;
+      if(!u||!p){ notify('Faltan usuario y contraseña'); return; }
+      if(users.some(function(x){return x.user===u;})){ notify('Ese usuario ya existe'); return; }
+      users.push({user:u,pass:p,rol:r,nombre:n||u}); save(UKEY,users);
+      document.getElementById('nuUser').value=''; document.getElementById('nuName').value=''; document.getElementById('nuPass').value='';
+      renderAcceso(); notify('Usuario agregado');
+    });
+    var saveBtn=document.getElementById('accSave');
+    if(saveBtn) saveBtn.addEventListener('click', function(){
+      document.querySelectorAll('#accMatrix input[type=checkbox]').forEach(function(cb){
+        var r=cb.getAttribute('data-r'), v=cb.getAttribute('data-v');
+        if(!roles[r].views) roles[r].views=[];
+        var idx=roles[r].views.indexOf(v);
+        if(cb.checked && idx===-1) roles[r].views.push(v);
+        if(!cb.checked && idx!==-1) roles[r].views.splice(idx,1);
+      });
+      save(RKEY,roles); applyRbac(); notify('Permisos guardados');
+    });
+
+    var saved=null; try{ saved=sessionStorage.getItem(SKEY); }catch(e){}
+    if(saved){ var su=users.filter(function(x){return x.user===saved;})[0]; if(su){ current=su; overlay.classList.add('hidden'); applyRbac(); if(rolDe(current).admin) renderAcceso(); } }
   })();
 </script>
 
