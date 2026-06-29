@@ -5773,7 +5773,8 @@
         } else {
           inner = '<div class="dnum">' + new Date(y, mo, dn).getDate() + '</div>';
         }
-        html += '<div class="' + cls + '"' + (inMes ? ' data-day="' + dn + '"' : '') + '>' + inner + '</div>';
+        var amd = inMes ? (' data-day="' + dn + '" role="button" tabindex="0" aria-label="Día ' + dn + ': ' + ven + ' ventas' + (ent ? (', entrega ' + ent) : '') + '"') : '';
+        html += '<div class="' + cls + '"' + amd + '>' + inner + '</div>';
       }
       grid.innerHTML = html;
       document.getElementById('agEntregas').textContent = totEnt;
@@ -5820,6 +5821,13 @@
       for (var k = 0; k < sels.length; k++) sels[k].classList.remove('sel');
       cell.classList.add('sel');
     });
+    grid.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var cell = (e.target && e.target.closest) ? e.target.closest('.cal-cell[data-day]') : null;
+      if (!cell) return;
+      e.preventDefault();
+      cell.click();
+    });
     document.addEventListener('click', function(e){
       var t = (e.target && e.target.closest) ? e.target.closest('.ag-link[data-go]') : null;
       if (!t) return;
@@ -5850,6 +5858,13 @@
     if (csvBtn) csvBtn.addEventListener('click', exportCsv);
     renderCal();
     renderHeat();
+    (function(){
+      var hoy = new Date();
+      if (view.getFullYear() === hoy.getFullYear() && view.getMonth() === hoy.getMonth()){
+        var c = grid.querySelector('.cal-cell[data-day="' + hoy.getDate() + '"]');
+        if (c) c.click();
+      }
+    })();
   })();
 </script>
 
