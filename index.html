@@ -1349,6 +1349,9 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="productSearch" type="search" placeholder="Buscar SKU, producto..." aria-label="Buscar productos por nombre o SKU" autocomplete="off" />
       </div>
+      <button class="icon-btn" type="button" id="darkQuick" aria-label="Cambiar tema claro/oscuro" title="Tema claro/oscuro">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
       <div class="pop-anchor">
         <button class="icon-btn" type="button" id="bellBtn" aria-label="Notificaciones (1 sin leer)" aria-haspopup="true" aria-expanded="false" aria-controls="bellPop">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
@@ -5130,6 +5133,13 @@
         toast(on ? 'Tema oscuro activado' : 'Tema claro activado');
       });
     }
+    // Acceso directo al tema en la barra superior (espeja el toggle del engranaje).
+    var darkQuick = document.getElementById('darkQuick');
+    if (darkQuick) darkQuick.addEventListener('click', function () {
+      var on = !root.classList.contains('theme-dark');
+      setDark(on);
+      if (typeof toast === 'function') toast(on ? 'Tema oscuro activado' : 'Tema claro activado');
+    });
 
     // (b) Densidad compacta — clase en <html> + persistencia.
     var densToggle = document.getElementById('densityToggle');
