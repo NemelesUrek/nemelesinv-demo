@@ -1238,6 +1238,41 @@
   .rate-link:hover{text-decoration:underline}
   .theme-dark .rate-link{color:#c4b5fd}
   @media (max-width:760px){ .rate-bar{font-size:10.5px;width:100%;margin:4px 0 0} }
+  /* ===== Vista Agenda: calendario de entregas + heatmap de ventas ===== */
+  #view-agenda .ag-head h1{font-size:24px;margin:0 0 4px;color:var(--text,#111827)}
+  #view-agenda .ag-head p{margin:0 0 16px;color:var(--muted,#6b7280);font-size:14px}
+  .ag-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .ag-kpi{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:16px;padding:14px 16px}
+  .ag-kpi .l{font-size:12px;color:var(--muted,#6b7280);font-weight:600}
+  .ag-kpi .v{font-size:22px;font-weight:800;color:var(--text,#111827);margin-top:4px}
+  .ag-card{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:18px;padding:16px 18px;margin-bottom:16px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .cal-head h3{margin:0;font-size:16px;color:var(--text,#111827);text-transform:capitalize}
+  .cal-nav{width:34px;height:34px;border:1px solid var(--line,#e5e7eb);background:transparent;border-radius:10px;cursor:pointer;font-size:18px;color:#7c3aed;line-height:1}
+  .cal-nav:hover{background:rgba(124,58,237,.10)}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;color:var(--muted,#6b7280);font-size:11px;font-weight:700;text-align:center;margin:6px 0;text-transform:uppercase;letter-spacing:.5px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal-cell{min-height:78px;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:6px 7px;position:relative;transition:.15s}
+  .cal-cell.out{opacity:.32}
+  .cal-cell.today{outline:2px solid #7c3aed;outline-offset:-2px}
+  .cal-cell .dnum{font-size:12.5px;font-weight:700;color:var(--text,#111827)}
+  .cal-evt{font-size:10.5px;line-height:1.3;margin-top:4px;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-evt.del{background:rgba(124,58,237,.16);color:#7c3aed}
+  .cal-evt.sale{background:rgba(6,182,212,.16);color:#0891b2}
+  .cal-legend{display:flex;gap:18px;margin-top:12px;font-size:12px;color:var(--muted,#6b7280)}
+  .cal-legend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .cal-legend .dot.del{background:#7c3aed}.cal-legend .dot.sale{background:#06b6d4}
+  .heat-wrap{overflow-x:auto;padding-bottom:6px}
+  .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,15px);gap:4px;min-width:560px}
+  .heat i{width:15px;height:15px;border-radius:4px;background:var(--line,#e5e7eb);transition:.15s}
+  .heat i:hover{transform:scale(1.3);box-shadow:0 0 0 2px #7c3aed}
+  .heat i.l1{background:rgba(124,58,237,.30)}.heat i.l2{background:rgba(124,58,237,.50)}.heat i.l3{background:rgba(124,58,237,.72)}.heat i.l4{background:#7c3aed}
+  .heat-legend{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:12px;color:var(--muted,#6b7280)}
+  .heat-legend .hl{display:inline-block;width:13px;height:13px;border-radius:3px;background:var(--line,#e5e7eb)}
+  .heat-legend .hl.l1{background:rgba(124,58,237,.30)}.heat-legend .hl.l2{background:rgba(124,58,237,.50)}.heat-legend .hl.l3{background:rgba(124,58,237,.72)}.heat-legend .hl.l4{background:#7c3aed}
+  .theme-dark .cal-cell{background:rgba(255,255,255,.03)}
+  .theme-dark .heat i{background:rgba(255,255,255,.07)}
+  @media (max-width:560px){ .ag-kpis{grid-template-columns:1fr} .cal-cell{min-height:60px} .cal-dow span{font-size:9px} }
 </style>
 </head>
 <body>
@@ -1290,6 +1325,10 @@
           <a class="pop-item" role="menuitem" href="#reportes"    data-nav="Reportes"    data-view="reportes"    data-title="Reportes · NemelesInv">
             <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg></span>
             Reportes
+          </a>
+          <a class="pop-item" role="menuitem" href="#agenda" data-nav="Agenda" data-view="agenda" data-title="Agenda · NemelesInv">
+            <span class="pi-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+            Agenda
           </a>
         </div>
       </div>
@@ -4466,6 +4505,34 @@
     </a>
   </footer>
 
+  <!-- ===== SPA · VISTA: AGENDA (calendario de entregas + heatmap de ventas) ===== -->
+  <section class="view" id="view-agenda" data-view="agenda" data-title="Agenda · NemelesInv">
+    <div class="ag-head">
+      <h1>Agenda</h1>
+      <p>Calendario de entregas previstas y mapa de ventas por día.</p>
+    </div>
+    <div class="ag-kpis">
+      <div class="ag-kpi"><div class="l">Entregas del mes</div><div class="v" id="agEntregas">0</div></div>
+      <div class="ag-kpi"><div class="l">Ventas del mes</div><div class="v" id="agVentas">—</div></div>
+      <div class="ag-kpi"><div class="l">Día pico</div><div class="v" id="agPico">—</div></div>
+    </div>
+    <div class="ag-card">
+      <div class="cal-head">
+        <button class="cal-nav" id="calPrev" type="button" aria-label="Mes anterior">‹</button>
+        <h3 id="calTitle">—</h3>
+        <button class="cal-nav" id="calNext" type="button" aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="cal-dow"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend"><span><i class="dot del"></i> Entrega prevista</span><span><i class="dot sale"></i> Ventas del día</span></div>
+    </div>
+    <div class="ag-card">
+      <div class="cal-head"><h3>Historial de ventas · últimas 12 semanas</h3></div>
+      <div class="heat-wrap"><div class="heat" id="heatGrid"></div></div>
+      <div class="heat-legend">Menos <i class="hl"></i><i class="hl l1"></i><i class="hl l2"></i><i class="hl l3"></i><i class="hl l4"></i> Más</div>
+    </div>
+  </section>
+
 </main>
 
 <!-- ===== BARRA DE PESTAÑAS MÓVIL (solo <=900px; usa el mismo router por data-view).
@@ -4483,6 +4550,7 @@
   <a href="#usuarios" data-nav="Usuarios" data-view="usuarios" data-title="Usuarios · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Usuarios</a>
   <a href="#facturacion" data-nav="Facturación" data-view="facturacion" data-title="Facturación · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>Facturas</a>
   <a href="#reportes" data-nav="Reportes" data-view="reportes" data-title="Reportes · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></svg>Reportes</a>
+  <a href="#agenda" data-nav="Agenda" data-view="agenda" data-title="Agenda · NemelesInv"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Agenda</a>
 </nav>
 
 <script>
@@ -5628,6 +5696,84 @@
         toast(ok); announce(ok);
       });
     }
+  })();
+  /* ===== Vista Agenda: calendario de entregas + heatmap de ventas (vanilla) ===== */
+  (function(){
+    var grid = document.getElementById('calGrid');
+    if (!grid) return;
+    var MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+               'septiembre','octubre','noviembre','diciembre'];
+    var view = new Date(); view.setDate(1);
+
+    // Ventas demo deterministas por fecha (estable para el portafolio).
+    function ventasDia(d){
+      var key = d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+      var h = Math.abs((key * 2654435761) % 100003);
+      var base = 18 + (h % 70);                 // 18..87
+      var dow = d.getDay();
+      if (dow === 5 || dow === 6) base = Math.round(base * 1.7); // fin de semana fuerte
+      if (dow === 0) base = Math.round(base * 0.6);
+      return base;
+    }
+    var ENTREGAS = {4:'Reposición calzado',9:'Pedido textil',14:'Electrónica',
+                    18:'Línea hogar',23:'Accesorios',28:'Temporada'};
+
+    function renderCal(){
+      var y = view.getFullYear(), mo = view.getMonth();
+      document.getElementById('calTitle').textContent = MES[mo] + ' ' + y;
+      var startDow = (new Date(y, mo, 1).getDay() + 6) % 7; // lunes = 0
+      var diasMes = new Date(y, mo + 1, 0).getDate();
+      var hoy = new Date(); hoy.setHours(0,0,0,0);
+      var html = '', totEnt = 0, totVen = 0, pico = {d:0, v:-1};
+      for (var i = 0; i < 42; i++){
+        var dn = i - startDow + 1;
+        var inMes = dn >= 1 && dn <= diasMes;
+        var cls = 'cal-cell' + (inMes ? '' : ' out');
+        var inner = '';
+        if (inMes){
+          var cd = new Date(y, mo, dn);
+          if (cd.getTime() === hoy.getTime()) cls += ' today';
+          var ent = ENTREGAS[dn];
+          var ven = ventasDia(cd);
+          totVen += ven;
+          if (ven > pico.v) pico = {d:dn, v:ven};
+          inner += '<div class="dnum">' + dn + '</div>';
+          if (ent){ inner += '<div class="cal-evt del" title="Entrega: ' + ent + '">📦 ' + ent + '</div>'; totEnt++; }
+          inner += '<div class="cal-evt sale" title="' + ven + ' ventas">' + ven + ' ventas</div>';
+        } else {
+          inner = '<div class="dnum">' + new Date(y, mo, dn).getDate() + '</div>';
+        }
+        html += '<div class="' + cls + '">' + inner + '</div>';
+      }
+      grid.innerHTML = html;
+      document.getElementById('agEntregas').textContent = totEnt;
+      document.getElementById('agVentas').textContent = totVen.toLocaleString('es-MX');
+      document.getElementById('agPico').textContent =
+        pico.v >= 0 ? (pico.d + ' ' + MES[mo].slice(0,3)) : '—';
+    }
+
+    function renderHeat(){
+      var heat = document.getElementById('heatGrid'); if (!heat) return;
+      var fin = new Date(); fin.setHours(0,0,0,0);
+      var dias = [];
+      for (var i = 83; i >= 0; i--){ var d = new Date(fin); d.setDate(fin.getDate() - i); dias.push(d); }
+      var vals = dias.map(ventasDia);
+      var max = Math.max.apply(null, vals) || 1;
+      var html = '';
+      dias.forEach(function(d, idx){
+        var v = vals[idx];
+        var lvl = v === 0 ? 0 : Math.min(4, Math.ceil(v / max * 4));
+        var lbl = d.getDate() + ' ' + MES[d.getMonth()].slice(0,3) + ' · ' + v + ' ventas';
+        html += '<i class="l' + lvl + '" title="' + lbl + '"></i>';
+      });
+      heat.innerHTML = html;
+    }
+
+    var prev = document.getElementById('calPrev'), next = document.getElementById('calNext');
+    if (prev) prev.addEventListener('click', function(){ view.setMonth(view.getMonth() - 1); renderCal(); });
+    if (next) next.addEventListener('click', function(){ view.setMonth(view.getMonth() + 1); renderCal(); });
+    renderCal();
+    renderHeat();
   })();
 </script>
 
