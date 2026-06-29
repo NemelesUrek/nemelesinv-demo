@@ -1272,6 +1272,14 @@
   .heat-legend .hl.l1{background:rgba(124,58,237,.30)}.heat-legend .hl.l2{background:rgba(124,58,237,.50)}.heat-legend .hl.l3{background:rgba(124,58,237,.72)}.heat-legend .hl.l4{background:#7c3aed}
   .theme-dark .cal-cell{background:rgba(255,255,255,.03)}
   .theme-dark .heat i{background:rgba(255,255,255,.07)}
+  .cal-cell[data-day]{cursor:pointer}
+  .cal-cell[data-day]:hover{border-color:#7c3aed}
+  .cal-cell.sel{outline:2px solid #7c3aed;outline-offset:-2px;background:rgba(124,58,237,.06)}
+  .ag-detail-body{display:flex;flex-direction:column;gap:2px}
+  .ag-d-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line,#e5e7eb)}
+  .ag-d-row:last-child{border-bottom:none}
+  .ag-d-k{color:var(--muted,#6b7280);font-size:13px}
+  .ag-d-v{color:var(--text,#111827);font-weight:700}
   @media (max-width:560px){ .ag-kpis{grid-template-columns:1fr} .cal-cell{min-height:60px} .cal-dow span{font-size:9px} }
 </style>
 </head>
@@ -4526,6 +4534,10 @@
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-legend"><span><i class="dot del"></i> Entrega prevista</span><span><i class="dot sale"></i> Ventas del día</span></div>
     </div>
+    <div class="ag-card" id="agDetail">
+      <div class="cal-head"><h3 id="agDetailTitle">Detalle del día</h3></div>
+      <div class="ag-detail-body" id="agDetailBody">Toca un día del calendario para ver sus entregas y ventas.</div>
+    </div>
     <div class="ag-card">
       <div class="cal-head"><h3>Historial de ventas · últimas 12 semanas</h3></div>
       <div class="heat-wrap"><div class="heat" id="heatGrid"></div></div>
@@ -5743,7 +5755,7 @@
         } else {
           inner = '<div class="dnum">' + new Date(y, mo, dn).getDate() + '</div>';
         }
-        html += '<div class="' + cls + '">' + inner + '</div>';
+        html += '<div class="' + cls + '"' + (inMes ? ' data-day="' + dn + '"' : '') + '>' + inner + '</div>';
       }
       grid.innerHTML = html;
       document.getElementById('agEntregas').textContent = totEnt;
@@ -5772,6 +5784,23 @@
     var prev = document.getElementById('calPrev'), next = document.getElementById('calNext');
     if (prev) prev.addEventListener('click', function(){ view.setMonth(view.getMonth() - 1); renderCal(); });
     if (next) next.addEventListener('click', function(){ view.setMonth(view.getMonth() + 1); renderCal(); });
+    grid.addEventListener('click', function(e){
+      var cell = e.target.closest ? e.target.closest('.cal-cell[data-day]') : null;
+      if (!cell) return;
+      var dn = parseInt(cell.getAttribute('data-day'), 10);
+      var y = view.getFullYear(), mo = view.getMonth();
+      var d = new Date(y, mo, dn);
+      var ven = ventasDia(d), ent = ENTREGAS[dn];
+      var t = document.getElementById('agDetailTitle');
+      var b = document.getElementById('agDetailBody');
+      if (t) t.textContent = dn + ' de ' + MES[mo];
+      if (b) b.innerHTML =
+        '<div class="ag-d-row"><span class="ag-d-k">Ventas del día</span><span class="ag-d-v">' + ven + '</span></div>' +
+        '<div class="ag-d-row"><span class="ag-d-k">Entrega prevista</span><span class="ag-d-v">' + (ent ? ('📦 ' + ent) : '—') + '</span></div>';
+      var sels = grid.querySelectorAll('.cal-cell.sel');
+      for (var k = 0; k < sels.length; k++) sels[k].classList.remove('sel');
+      cell.classList.add('sel');
+    });
     renderCal();
     renderHeat();
   })();
