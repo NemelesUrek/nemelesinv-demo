@@ -4572,6 +4572,94 @@
     </div>
   </div>
 
+  <!-- ===== MODAL: Nueva factura (accesible · crea una factura real en la tabla) ===== -->
+  <div class="modal-overlay" id="invoiceModalOverlay">
+    <div class="modal" id="invoiceModal" role="dialog" aria-modal="true" aria-labelledby="invoiceModalTitle" aria-describedby="invoiceModalDesc">
+      <div class="modal-head">
+        <div>
+          <h3 id="invoiceModalTitle">Nueva factura</h3>
+          <p id="invoiceModalDesc">Emite una factura para un cliente: se añade a la lista y actualiza los totales. Documento de demostración, sin valor fiscal.</p>
+        </div>
+        <button class="modal-close" type="button" id="invoiceModalClose" aria-label="Cerrar diálogo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="invoiceForm" novalidate>
+        <div class="field">
+          <label for="inv-cliente">Cliente</label>
+          <input type="text" id="inv-cliente" name="cliente" placeholder="Ej. Moda Atlántica S.L." autocomplete="off" required />
+          <p class="hint">Nombre o empresa. Sin datos de contacto.</p>
+        </div>
+        <div class="field">
+          <label for="inv-fecha">Fecha de emisión</label>
+          <input type="date" id="inv-fecha" name="fecha" />
+        </div>
+        <div class="field">
+          <label for="inv-importe">Importe (€)</label>
+          <input type="number" id="inv-importe" name="importe" min="0" step="0.01" placeholder="0,00" inputmode="decimal" required />
+          <p class="hint">Importe base en euros; se muestra en la moneda activa del panel.</p>
+        </div>
+        <div class="field">
+          <label for="inv-estado">Estado de cobro</label>
+          <select id="inv-estado" name="estado">
+            <option value="Pendiente" selected>Pendiente</option>
+            <option value="Pagada">Pagada</option>
+            <option value="Vencida">Vencida</option>
+          </select>
+        </div>
+        <div class="modal-foot">
+          <button class="chip" type="button" id="invoiceModalCancel">Cancelar</button>
+          <button class="chip primary" type="submit" id="invoiceModalSave">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Emitir factura
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: Conectar canal (accesible · añade una tarjeta de canal real) ===== -->
+  <div class="modal-overlay" id="channelModalOverlay">
+    <div class="modal" id="channelModal" role="dialog" aria-modal="true" aria-labelledby="channelModalTitle" aria-describedby="channelModalDesc">
+      <div class="modal-head">
+        <div>
+          <h3 id="channelModalTitle">Conectar canal</h3>
+          <p id="channelModalDesc">Añade un marketplace o tienda al panel: aparece como tarjeta conectada con su cobertura de catálogo. Demostración, sin conexión real.</p>
+        </div>
+        <button class="modal-close" type="button" id="channelModalClose" aria-label="Cerrar diálogo">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="channelForm" novalidate>
+        <div class="field">
+          <label for="ch-nombre">Nombre del canal</label>
+          <input type="text" id="ch-nombre" name="nombre" placeholder="Ej. eBay, PrestaShop, TikTok Shop" autocomplete="off" required />
+          <p class="hint">Nombre del marketplace o tienda a conectar.</p>
+        </div>
+        <div class="field">
+          <label for="ch-tipo">Tipo de canal</label>
+          <select id="ch-tipo" name="tipo">
+            <option value="Marketplace" selected>Marketplace</option>
+            <option value="Tienda online propia">Tienda online propia</option>
+            <option value="Plugin / CMS">Plugin / CMS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="ch-productos">Productos a publicar</label>
+          <input type="number" id="ch-productos" name="productos" min="0" step="1" placeholder="0" inputmode="numeric" required />
+          <p class="hint">Cantidad del catálogo que se publicará en este canal.</p>
+        </div>
+        <div class="modal-foot">
+          <button class="chip" type="button" id="channelModalCancel">Cancelar</button>
+          <button class="chip primary" type="submit" id="channelModalSave">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Conectar canal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ===================== 9. FOOTER (conversión · persistente entre vistas) ===================== -->
   <footer class="foot">
     <div class="foot-copy">
@@ -5526,8 +5614,7 @@
       var span = btn.querySelector('span');
       var prev = span ? span.textContent : '';
       if (name === 'nuevo canal') {
-        toast('Asistente de conexión de canal — demo');
-        announce('Asistente de conexión de canal.');
+        openChannelModal(btn);
         return;
       }
       syncChannel(card, name);
@@ -5557,6 +5644,142 @@
           if (syncAllText) syncAllText.textContent = syncAllPrev;
           syncAllBusy = false;
         }, 2200);
+      });
+    }
+
+    /* ---------- 15.b) CONECTAR CANAL: modal accesible que añade una tarjeta
+       de canal REAL al grid (logo con iniciales, stats, cobertura y footer de
+       sync). Todo del lado del cliente; el nombre del canal es del usuario, así
+       que se inserta con createElement/textContent (nunca innerHTML). --------- */
+    var chModalOverlay = document.getElementById('channelModalOverlay');
+    var chModal        = document.getElementById('channelModal');
+    var chForm         = document.getElementById('channelForm');
+    var chTrigger      = null;
+    var chGrid         = document.querySelector('#view-canales .channel-grid');
+    var chCta          = chGrid ? chGrid.querySelector('.rc-cta') : null;
+    var CH_PALETTE = [
+      { c1: '#f43f5e', c3: 'rgba(244,63,94,.4)', c2: '#fb7185' },
+      { c1: '#3b82f6', c3: 'rgba(59,130,246,.4)', c2: '#60a5fa' },
+      { c1: '#10b981', c3: 'rgba(16,185,129,.4)', c2: '#34d399' },
+      { c1: '#f59e0b', c3: 'rgba(245,158,11,.4)', c2: '#fbbf24' },
+      { c1: '#8b5cf6', c3: 'rgba(139,92,246,.4)', c2: '#a78bfa' },
+      { c1: '#06b6d4', c3: 'rgba(6,182,212,.4)', c2: '#22d3ee' }
+    ];
+
+    function chInitials(name){
+      var parts = String(name || '').trim().split(/\s+/);
+      if (!parts[0]) return '??';
+      if (parts.length === 1) return parts[0].slice(0, 2).replace(/^./, function (c){ return c.toUpperCase(); });
+      return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+    }
+    function addChannel(nombre, tipo, productos){
+      if (!chGrid || !chCta) return;
+      var pal = CH_PALETTE[Math.floor(Math.random() * CH_PALETTE.length)];
+      var sinMapear = Math.max(0, Math.round(productos * (0.08 + Math.random() * 0.07)));
+      var cobertura = productos > 0 ? Math.round(100 * (productos - sinMapear) / productos) : 0;
+      var ventaEur = Math.round(productos * (180 + Math.random() * 160)); // venta estimada
+
+      var card = document.createElement('article');
+      card.className = 'card channel-card';
+      card.setAttribute('data-channel', nombre);
+
+      var head = document.createElement('div'); head.className = 'ch-head';
+      var logo = document.createElement('div'); logo.className = 'ch-logo';
+      logo.style.cssText = '--c1:' + pal.c1 + ';--c3:' + pal.c3; logo.setAttribute('aria-hidden', 'true');
+      logo.textContent = chInitials(nombre);
+      var nameWrap = document.createElement('div'); nameWrap.className = 'ch-name';
+      var b = document.createElement('b'); b.textContent = nombre;
+      var sub = document.createElement('span'); sub.className = 'ch-sub'; sub.textContent = tipo + ' · nuevo';
+      nameWrap.appendChild(b); nameWrap.appendChild(sub);
+      var state = document.createElement('span'); state.className = 'ch-state ok'; state.textContent = 'Conectado';
+      head.appendChild(logo); head.appendChild(nameWrap); head.appendChild(state);
+
+      var stats = document.createElement('div'); stats.className = 'ch-stats';
+      var s1 = document.createElement('div'); s1.className = 'ch-stat';
+      var s1b = document.createElement('b'); s1b.textContent = String(productos); var s1s = document.createElement('span'); s1s.textContent = 'Publicados';
+      s1.appendChild(s1b); s1.appendChild(s1s);
+      var s2 = document.createElement('div'); s2.className = 'ch-stat warn';
+      var s2b = document.createElement('b'); s2b.textContent = String(sinMapear); var s2s = document.createElement('span'); s2s.textContent = 'Sin mapear';
+      s2.appendChild(s2b); s2.appendChild(s2s);
+      var s3 = document.createElement('div'); s3.className = 'ch-stat eur';
+      var s3b = document.createElement('b'); s3b.setAttribute('data-eur', String(ventaEur)); s3b.setAttribute('data-cfmt', 'k');
+      s3b.textContent = formatMoney(ventaEur, 'k', CURRENCIES[(curSelect && curSelect.value) || 'EUR'] || CURRENCIES.EUR);
+      var s3s = document.createElement('span'); s3s.textContent = 'Venta';
+      s3.appendChild(s3b); s3.appendChild(s3s);
+      moneyNodes.push(s3b); // que el cambio de moneda reformatee esta venta
+      stats.appendChild(s1); stats.appendChild(s2); stats.appendChild(s3);
+
+      var cov = document.createElement('div'); cov.className = 'ch-cov';
+      var covHead = document.createElement('div'); covHead.className = 'cov-head';
+      var covLbl = document.createElement('span'); covLbl.textContent = 'Cobertura de catálogo';
+      var covPct = document.createElement('b'); covPct.textContent = cobertura + '%';
+      covHead.appendChild(covLbl); covHead.appendChild(covPct);
+      var prog = document.createElement('div'); prog.className = 'progress'; prog.setAttribute('role', 'progressbar');
+      prog.setAttribute('aria-label', 'Cobertura de catálogo en ' + nombre);
+      prog.setAttribute('aria-valuenow', String(cobertura)); prog.setAttribute('aria-valuemin', '0');
+      prog.setAttribute('aria-valuemax', '100'); prog.setAttribute('aria-valuetext', cobertura + '%');
+      var progI = document.createElement('i'); progI.style.cssText = 'width:' + cobertura + '%;--c1:' + pal.c1 + ';--c2:' + pal.c2;
+      prog.appendChild(progI);
+      cov.appendChild(covHead); cov.appendChild(prog);
+
+      var foot = document.createElement('div'); foot.className = 'ch-foot';
+      var syncBtn = document.createElement('button'); syncBtn.className = 'repo-btn'; syncBtn.type = 'button'; syncBtn.setAttribute('data-sync', nombre);
+      var syncSpan = document.createElement('span'); syncSpan.textContent = 'Sincronizar ahora'; syncBtn.appendChild(syncSpan);
+      var syncLbl = document.createElement('span'); syncLbl.className = 'ch-sync'; syncLbl.setAttribute('data-sync-label', '');
+      var t1 = document.createTextNode('última sync '); var lb = document.createElement('b'); lb.textContent = 'hace instantes';
+      syncLbl.appendChild(t1); syncLbl.appendChild(lb);
+      foot.appendChild(syncBtn); foot.appendChild(syncLbl);
+
+      card.appendChild(head); card.appendChild(stats); card.appendChild(cov); card.appendChild(foot);
+      chGrid.insertBefore(card, chCta);
+      return card;
+    }
+
+    function chFocusables(){
+      if (!chModal) return [];
+      return Array.prototype.slice.call(chModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter(function (el) { return !el.disabled && el.offsetParent !== null; });
+    }
+    function openChannelModal(trigger){
+      if (!chModalOverlay) return;
+      chTrigger = trigger || document.activeElement;
+      if (chForm) chForm.reset();
+      chModalOverlay.classList.add('open');
+      var first = document.getElementById('ch-nombre'); if (first && first.focus) first.focus();
+    }
+    function closeChannelModal(){
+      if (!chModalOverlay) return;
+      chModalOverlay.classList.remove('open');
+      if (chTrigger && typeof chTrigger.focus === 'function') chTrigger.focus();
+    }
+    var chClose  = document.getElementById('channelModalClose');
+    var chCancel = document.getElementById('channelModalCancel');
+    if (chClose)  chClose.addEventListener('click', closeChannelModal);
+    if (chCancel) chCancel.addEventListener('click', closeChannelModal);
+    if (chModalOverlay) {
+      chModalOverlay.addEventListener('click', function (e) { if (e.target === chModalOverlay) closeChannelModal(); });
+      chModalOverlay.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.stopPropagation(); closeChannelModal(); return; }
+        if (e.key === 'Tab') {
+          var f = chFocusables(); if (!f.length) return;
+          var first = f[0], last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      });
+    }
+    if (chForm) {
+      chForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var nEl = document.getElementById('ch-nombre'), tEl = document.getElementById('ch-tipo'), pEl = document.getElementById('ch-productos');
+        var nombre = nEl ? String(nEl.value || '').trim() : '';
+        var tipo = tEl ? tEl.value : 'Marketplace';
+        var productos = pEl ? parseInt(pEl.value, 10) : NaN;
+        if (!nombre) { var w1 = 'Indica el nombre del canal a conectar.'; toast(w1); announce(w1); if (nEl && nEl.focus) nEl.focus(); return; }
+        if (isNaN(productos) || productos < 0) { var w2 = 'Indica cuántos productos publicar (0 o más).'; toast(w2); announce(w2); if (pEl && pEl.focus) pEl.focus(); return; }
+        addChannel(nombre, tipo, productos);
+        closeChannelModal();
+        var ok = 'Canal ' + nombre + ' conectado · ' + productos + ' productos publicados'; toast(ok); announce(ok);
       });
     }
 
@@ -5624,45 +5847,78 @@
       flashBtn(btn, 'Abierto ✓');
     });
 
-    // FACTURAS: descargar PDF (data: URI, 100% offline) + nueva factura
+    /* FACTURAS: comprobante imprimible (100% offline) + alta REAL de factura.
+       "Descargar" abre un comprobante maquetado listo para imprimir o guardar
+       como PDF (con respaldo a descarga .html si el navegador bloquea la ventana).
+       "Nueva factura" abre un modal accesible que añade una fila real y recalcula
+       el total del pie y el KPI "Nº facturas". Todo del lado del cliente. */
+    function escHtml(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function (c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+    function estadoBadge(estado){
+      var e = (estado || '').toLowerCase();
+      var cls = e.indexOf('pag') === 0 ? 'b-done' : (e.indexOf('venc') === 0 ? 'b-over' : 'b-pend');
+      return '<span class="badge ' + cls + '">' + escHtml(estado || 'Pendiente') + '</span>';
+    }
+    function buildInvoiceDoc(folio, cliente, fecha, monto, estado){
+      return '<!doctype html><html lang="es"><head><meta charset="utf-8">' +
+        '<title>' + escHtml(folio) + ' · NemelesInv</title>' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<style>' +
+        '*{box-sizing:border-box}body{font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;margin:0;padding:40px;background:#fff}' +
+        '.doc{max-width:720px;margin:0 auto}' +
+        '.top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #7c3aed;padding-bottom:18px;margin-bottom:24px}' +
+        '.brand{font-size:22px;font-weight:800;letter-spacing:-.02em;color:#7c3aed}.brand small{display:block;font-size:11px;font-weight:600;color:#64748b;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}' +
+        '.fol{text-align:right}.fol .n{font-size:18px;font-weight:800}.fol .d{font-size:12px;color:#64748b;margin-top:4px}' +
+        '.badge{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}' +
+        '.b-done{background:#dcfce7;color:#15803d}.b-pend{background:#fef9c3;color:#a16207}.b-over{background:#fee2e2;color:#b91c1c}' +
+        '.party .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8;margin-bottom:4px}.party .v{font-weight:700;font-size:15px}' +
+        'table{width:100%;border-collapse:collapse;margin:18px 0}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #e2e8f0}th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8}td.num,th.num{text-align:right}' +
+        '.tot{display:flex;justify-content:flex-end;margin-top:8px}.tot .box{min-width:240px}.tot .row{display:flex;justify-content:space-between;padding:6px 0}.tot .grand{border-top:2px solid #0f172a;margin-top:6px;padding-top:10px;font-size:18px;font-weight:800}' +
+        '.note{margin-top:32px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:11px;color:#64748b}' +
+        '.actions{margin:0 auto 18px;max-width:720px;display:flex;gap:8px;justify-content:flex-end}' +
+        '.actions button{font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer}.actions .pr{background:#7c3aed;color:#fff;border-color:#7c3aed}' +
+        '@media print{.actions{display:none}body{padding:0}}' +
+        '</style></head><body>' +
+        '<div class="actions"><button onclick="window.print()" class="pr">Imprimir / Guardar PDF</button><button onclick="window.close()">Cerrar</button></div>' +
+        '<div class="doc">' +
+          '<div class="top"><div class="brand">NemelesInv<small>Sistema de inventario</small></div>' +
+          '<div class="fol"><div class="n">' + escHtml(folio) + '</div><div class="d">' + escHtml(fecha) + '</div>' + estadoBadge(estado) + '</div></div>' +
+          '<div class="party"><div class="lbl">Facturar a</div><div class="v">' + escHtml(cliente || '—') + '</div></div>' +
+          '<table><thead><tr><th>Concepto</th><th class="num">Importe</th></tr></thead>' +
+          '<tbody><tr><td>Venta de mercancía · pedido ' + escHtml(folio) + '</td><td class="num">' + escHtml(monto) + '</td></tr></tbody></table>' +
+          '<div class="tot"><div class="box"><div class="row"><span>Subtotal</span><span>' + escHtml(monto) + '</span></div><div class="row grand"><span>Total</span><span>' + escHtml(monto) + '</span></div></div></div>' +
+          '<div class="note">Documento de demostración generado por NemelesInv — sin valor fiscal. Diseño y desarrollo a medida.</div>' +
+        '</div></body></html>';
+    }
+
     function downloadInvoice(folio, row, btn) {
-      var cliente = '';
-      var fecha = '';
-      var monto = '';
-      var estado = '';
+      var cliente = '', fecha = '', monto = '', estado = '';
       if (row) {
-        var cells = row.querySelectorAll('td, th');
-        // 0=folio(th) ya lo tenemos; mapeamos por las celdas conocidas.
-        var c = row.querySelector('td');                 // 1ª td = cliente
-        if (c) cliente = c.textContent.trim();
-        var tds = row.querySelectorAll('td');
-        if (tds[1]) fecha = tds[1].textContent.trim();   // fecha
-        var montoEl = row.querySelector('.eur span');
-        if (montoEl) monto = montoEl.textContent.trim(); // ya formateado en la moneda activa
-        var pill = row.querySelector('.status-pill');
-        if (pill) estado = pill.textContent.trim();
+        var c = row.querySelector('td');                 if (c) cliente = c.textContent.trim();
+        var tds = row.querySelectorAll('td');             if (tds[1]) fecha = tds[1].textContent.trim();
+        var montoEl = row.querySelector('.eur span');     if (montoEl) monto = montoEl.textContent.trim();
+        var pill = row.querySelector('.status-pill');     if (pill) estado = pill.textContent.trim();
       }
+      var html = buildInvoiceDoc(folio, cliente, fecha, monto, estado);
       try {
-        var txt =
-          'FACTURA ' + folio + '\n' +
-          '--------------------------------\n' +
-          'Cliente: ' + cliente + '\n' +
-          'Fecha:   ' + fecha + '\n' +
-          'Importe: ' + monto + '\n' +
-          'Estado:  ' + estado + '\n' +
-          '--------------------------------\n' +
-          'NemelesInv · documento de demostración (sin valor fiscal).\n';
-        var uri = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
+        var w = window.open('', '_blank');
+        if (w && w.document) {
+          w.document.open(); w.document.write(html); w.document.close();
+          var msg = 'Factura ' + folio + ' lista para imprimir o guardar como PDF';
+          toast(msg); announce(msg); flashBtn(btn, 'Abierta ✓');
+          return;
+        }
+      } catch (err) { /* el navegador bloqueó la ventana → respaldo abajo */ }
+      try {
+        var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
         var a = document.createElement('a');
-        a.href = uri;
-        a.download = folio + '.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        var msg = 'Factura ' + folio + ' descargada';
-        toast(msg); announce(msg);
-        flashBtn(btn, 'Descargada ✓');
-      } catch (err) {
+        a.href = URL.createObjectURL(blob);
+        a.download = folio + '.html';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function () { try { URL.revokeObjectURL(a.href); } catch (e) {} }, 1500);
+        var m2 = 'Factura ' + folio + ' descargada (comprobante imprimible)';
+        toast(m2); announce(m2); flashBtn(btn, 'Descargada ✓');
+      } catch (e2) {
         announce('No se pudo generar la factura en este navegador.');
         toast('No se pudo generar la factura');
       }
@@ -5676,12 +5932,140 @@
       downloadInvoice(folio, row, btn);
     });
 
+    /* ---- Alta de factura: modal accesible que crea una fila real + totales ---- */
+    var invModalOverlay = document.getElementById('invoiceModalOverlay');
+    var invModal        = document.getElementById('invoiceModal');
+    var invForm         = document.getElementById('invoiceForm');
+    var invTrigger      = null;
+    var invTableBody    = document.querySelector('#view-facturacion table.invoices tbody');
+    var invFootCount = null, invFootSum = null, invKpiCount = null, invBaseTotal = 326;
+
+    (function initInvoiceRefs(){
+      var tf = document.querySelector('#view-facturacion table.invoices tfoot tr');
+      if (tf) {
+        invFootCount = tf.querySelector('td');
+        invFootSum   = tf.querySelector('.num span[data-eur]');
+        var m = invFootCount ? /de\s+([\d.\s]+)/.exec(invFootCount.textContent) : null;
+        if (m) { var n = parseInt(m[1].replace(/[.\s]/g, ''), 10); if (n) invBaseTotal = n; }
+      }
+      var labels = document.querySelectorAll('#view-facturacion .kpi .kpi-label');
+      for (var i = 0; i < labels.length; i++) {
+        if (/facturas/i.test(labels[i].textContent) && /N/.test(labels[i].textContent)) {
+          var kpi = labels[i].closest('.kpi'); if (kpi) invKpiCount = kpi.querySelector('.kpi-value');
+          break;
+        }
+      }
+    })();
+
+    function nextFolio(){
+      var max = 0, rows = invTableBody ? invTableBody.querySelectorAll('tr[data-invoice]') : [];
+      for (var i = 0; i < rows.length; i++) {
+        var mm = /(\d+)\s*$/.exec(rows[i].getAttribute('data-invoice') || '');
+        if (mm) { var n = parseInt(mm[1], 10); if (n > max) max = n; }
+      }
+      if (!max) max = 318;
+      return 'FAC-2026-' + (max + 1);
+    }
+    var MESES_ABR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    function fmtFecha(iso){
+      if (!iso) return '';
+      var p = iso.split('-'); if (p.length !== 3) return iso;
+      return parseInt(p[2], 10) + ' ' + (MESES_ABR[parseInt(p[1], 10) - 1] || '') + ' ' + p[0];
+    }
+    function pillClass(estado){
+      var e = (estado || '').toLowerCase();
+      return e.indexOf('pag') === 0 ? 'done' : (e.indexOf('venc') === 0 ? 'over' : 'pend');
+    }
+
+    function addInvoice(cliente, iso, eur, estado){
+      if (!invTableBody) return '';
+      var folio = nextFolio();
+      var curNow = CURRENCIES[(curSelect && curSelect.value) || 'EUR'] || CURRENCIES.EUR;
+      var tr = document.createElement('tr');
+      tr.setAttribute('data-invoice', folio);
+      var th = document.createElement('th'); th.setAttribute('scope', 'row'); th.style.fontWeight = '700'; th.textContent = folio; tr.appendChild(th);
+      var tdC = document.createElement('td'); tdC.textContent = cliente; tr.appendChild(tdC);
+      var tdF = document.createElement('td'); tdF.textContent = fmtFecha(iso); tr.appendChild(tdF);
+      var tdM = document.createElement('td'); tdM.className = 'num eur';
+      var spM = document.createElement('span'); spM.setAttribute('data-eur', String(eur)); spM.setAttribute('data-cfmt', 'full');
+      spM.textContent = formatMoney(eur, 'full', curNow);
+      tdM.appendChild(spM); tr.appendChild(tdM);
+      moneyNodes.push(spM); // que el cambio de moneda también reformatee esta fila
+      var tdS = document.createElement('td');
+      var pill = document.createElement('span'); pill.className = 'status-pill ' + pillClass(estado); pill.textContent = estado; tdS.appendChild(pill); tr.appendChild(tdS);
+      var tdA = document.createElement('td');
+      var wrap = document.createElement('div'); wrap.className = 'row-actions';
+      var b = document.createElement('button'); b.className = 'mini-btn'; b.type = 'button'; b.setAttribute('data-invoice-act', 'pdf'); b.setAttribute('data-invoice', folio); b.textContent = 'Descargar PDF';
+      wrap.appendChild(b); tdA.appendChild(wrap); tr.appendChild(tdA);
+      invTableBody.insertBefore(tr, invTableBody.firstChild);
+
+      invBaseTotal += 1;
+      if (invFootCount) invFootCount.textContent = invTableBody.querySelectorAll('tr[data-invoice]').length + ' de ' + invBaseTotal + ' facturas';
+      if (invFootSum) {
+        var prev = parseFloat(invFootSum.getAttribute('data-eur')) || 0;
+        var nv = prev + eur; invFootSum.setAttribute('data-eur', String(nv));
+        invFootSum.textContent = formatMoney(nv, invFootSum.getAttribute('data-cfmt') || 'full', curNow);
+      }
+      if (invKpiCount) {
+        var kn = parseInt((invKpiCount.textContent || '').replace(/\D/g, ''), 10) || (invBaseTotal - 1);
+        invKpiCount.textContent = String(kn + 1);
+      }
+      return folio;
+    }
+
+    function invFocusables(){
+      if (!invModal) return [];
+      return Array.prototype.slice.call(invModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter(function (el) { return !el.disabled && el.offsetParent !== null; });
+    }
+    function openInvoiceModal(){
+      if (!invModalOverlay) return;
+      invTrigger = document.activeElement;
+      if (invForm) invForm.reset();
+      var fEl = document.getElementById('inv-fecha');
+      if (fEl) { var d = new Date(); fEl.value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+      invModalOverlay.classList.add('open');
+      var first = document.getElementById('inv-cliente'); if (first && first.focus) first.focus();
+    }
+    function closeInvoiceModal(){
+      if (!invModalOverlay) return;
+      invModalOverlay.classList.remove('open');
+      if (invTrigger && typeof invTrigger.focus === 'function') invTrigger.focus();
+    }
+
     var newInvoiceBtn = document.getElementById('newInvoiceBtn');
-    if (newInvoiceBtn) {
-      newInvoiceBtn.addEventListener('click', function () {
-        var msg = 'Asistente de nueva factura — demo';
-        toast(msg); announce(msg);
-        flashBtn(newInvoiceBtn, 'Nueva factura ✓');
+    if (newInvoiceBtn) newInvoiceBtn.addEventListener('click', openInvoiceModal);
+    var invClose  = document.getElementById('invoiceModalClose');
+    var invCancel = document.getElementById('invoiceModalCancel');
+    if (invClose)  invClose.addEventListener('click', closeInvoiceModal);
+    if (invCancel) invCancel.addEventListener('click', closeInvoiceModal);
+    if (invModalOverlay) {
+      invModalOverlay.addEventListener('click', function (e) { if (e.target === invModalOverlay) closeInvoiceModal(); });
+      invModalOverlay.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.stopPropagation(); closeInvoiceModal(); return; }
+        if (e.key === 'Tab') {
+          var f = invFocusables(); if (!f.length) return;
+          var first = f[0], last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      });
+    }
+    if (invForm) {
+      invForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var cEl = document.getElementById('inv-cliente'), fEl = document.getElementById('inv-fecha'),
+            mEl = document.getElementById('inv-importe'), sEl = document.getElementById('inv-estado');
+        var cliente = cEl ? String(cEl.value || '').trim() : '';
+        var iso = fEl ? fEl.value : '';
+        var eur = mEl ? parseFloat(String(mEl.value).replace(',', '.')) : NaN;
+        var estado = sEl ? sEl.value : 'Pendiente';
+        if (!cliente) { var w1 = 'Indica el cliente para emitir la factura.'; toast(w1); announce(w1); if (cEl && cEl.focus) cEl.focus(); return; }
+        if (isNaN(eur) || eur <= 0) { var w2 = 'Indica un importe válido mayor que cero.'; toast(w2); announce(w2); if (mEl && mEl.focus) mEl.focus(); return; }
+        var folio = addInvoice(cliente, iso, eur, estado);
+        closeInvoiceModal();
+        var ok = 'Factura ' + folio + ' emitida para ' + cliente; toast(ok); announce(ok);
+        if (newInvoiceBtn) flashBtn(newInvoiceBtn, 'Factura creada ✓');
       });
     }
 
