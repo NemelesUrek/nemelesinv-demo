@@ -486,6 +486,12 @@
   .store-row .bar{height:9px;border-radius:7px;background:rgba(15,23,42,.05);overflow:hidden}
   .store-row .bar i{display:block;height:100%;border-radius:7px;background:var(--grad-cv);box-shadow:0 3px 8px rgba(6,182,212,.2)}
   .store-row .v{font-weight:700;text-align:right}
+  /* Filtro por tienda: atenúa las no seleccionadas y resalta la elegida. */
+  .store-row{transition:opacity .2s,transform .2s}
+  .store-row.store-dim{opacity:.32}
+  .store-row.store-hl .name{color:var(--text);font-weight:800}
+  .store-row.store-hl .v{color:var(--violet)}
+  .store-row.store-hl .bar i{box-shadow:0 3px 10px rgba(124,58,237,.35);filter:saturate(1.25)}
 
   /* --- mini área "stock vs ideal" --- */
   .mini{
@@ -4547,12 +4553,13 @@
         <div class="field">
           <label for="um-role">Rol</label>
           <select id="um-role" name="role">
-            <option value="Administrador">Administrador</option>
-            <option value="Almacén" selected>Almacén</option>
-            <option value="Compras">Compras</option>
-            <option value="Ventas">Ventas</option>
+            <option value="admin">Administrador</option>
+            <option value="gerente">Gerente</option>
+            <option value="ventas">Ventas</option>
+            <option value="almacen" selected>Almacén</option>
+            <option value="consulta">Solo lectura</option>
           </select>
-          <p class="hint">El rol define los permisos (ver, editar, eliminar, exportar).</p>
+          <p class="hint">El rol define qué vistas puede ver el usuario. Coincide con la matriz de permisos.</p>
         </div>
         <div class="field">
           <label for="um-state">Estado</label>
@@ -5369,7 +5376,25 @@
       });
     }
 
-    /* ---------- 11) TIENDAS (filtro demo) ---------------------------------- */
+    /* ---------- 11) TIENDAS (filtro REAL: resalta una tienda en todos los
+       rankings y atenúa las demás; "Todas" restaura) ----------------------- */
+    function applyStoreFilter(store) {
+      var rows = document.querySelectorAll('.store-row');
+      var all = store === 'Todas las tiendas';
+      var matched = 0;
+      Array.prototype.forEach.call(rows, function (row) {
+        var nameEl = row.querySelector('.name');
+        var name = nameEl ? nameEl.textContent.trim() : '';
+        if (all) {
+          row.classList.remove('store-dim', 'store-hl');
+        } else if (name === store) {
+          row.classList.add('store-hl'); row.classList.remove('store-dim'); matched++;
+        } else {
+          row.classList.add('store-dim'); row.classList.remove('store-hl');
+        }
+      });
+      return matched;
+    }
     var storeWired = wirePopover('storeBtn');
     if (storeWired) {
       var storeLabel = document.querySelector('[data-store-label]');
@@ -5380,9 +5405,13 @@
           if (storeLabel) storeLabel.textContent = store;
           closePopover(true);
           if (store === 'Todas las tiendas') {
-            toast('Mostrando todas las tiendas — demo');
+            applyStoreFilter(store);
+            var m0 = 'Mostrando todas las tiendas';
+            toast(m0); announce(m0);
           } else {
-            toast('Filtrando por: ' + store + ' — demo');
+            var n = applyStoreFilter(store);
+            var msg = 'Filtrando por ' + store + ' · resaltada en ' + n + ' ranking' + (n === 1 ? '' : 's');
+            toast(msg); announce(msg);
           }
         });
       });
@@ -6194,9 +6223,26 @@
           else if (uIn && uIn.focus) uIn.focus();
           return;
         }
-        closeUserModal();
-        var ok = 'Usuario guardado: ' + name + ' · ' + role + ' — demo';
-        toast(ok); announce(ok);
+        // Alta REAL vía el sistema de control de acceso (otro IIFE).
+        if (typeof window.__nemAddUser === 'function') {
+          var res = window.__nemAddUser(name, user, role);
+          if (!res || !res.ok) {
+            var why = res && res.reason === 'exists'
+              ? 'Ese nombre de usuario ya existe. Elige otro.'
+              : 'Indica un nombre de usuario válido.';
+            toast(why); announce(why);
+            if (uIn && uIn.focus) uIn.focus();
+            return;
+          }
+          closeUserModal();
+          var ok = 'Usuario ' + res.user + ' creado · rol ' + res.rolNombre +
+                   ' · contraseña temporal ' + res.pass;
+          toast(ok); announce(ok);
+        } else {
+          closeUserModal();
+          var ok2 = 'Usuario guardado: ' + name + ' · ' + role;
+          toast(ok2); announce(ok2);
+        }
       });
     }
   })();
@@ -6406,8 +6452,12 @@
     }
 
     var accts=document.getElementById('loginAccts');
-    if(accts){
+    function renderAccts(){
+      if(!accts) return;
       accts.innerHTML=users.map(function(u){ return '<span class="login-acct" data-u="'+u.user+'" data-p="'+u.pass+'"><b>'+u.user+'</b> · '+(roles[u.rol]?roles[u.rol].nombre:u.rol)+'</span>'; }).join('');
+    }
+    if(accts){
+      renderAccts();
       accts.addEventListener('click', function(e){
         var c=e.target.closest('.login-acct'); if(!c)return;
         document.getElementById('loginUser').value=c.getAttribute('data-u');
@@ -6470,6 +6520,23 @@
       });
       save(RKEY,roles); applyRbac(); notify('Permisos guardados');
     });
+
+    /* Hook para el modal "Nuevo usuario" (vive en otro IIFE): da de alta un
+       usuario REAL, lo persiste, refresca la lista de accesos y la tabla de la
+       vista Acceso, y devuelve la contraseña temporal generada. */
+    window.__nemAddUser = function(nombre, rawUser, rol){
+      var user = String(rawUser||'').replace(/^@+/,'').trim();
+      if(!user) return {ok:false, reason:'nouser'};
+      if(users.some(function(x){return x.user===user;})) return {ok:false, reason:'exists'};
+      if(!roles[rol]) rol='consulta';
+      var base = user.replace(/[^A-Za-z0-9]/g,'') || 'user';
+      var pass = base.charAt(0).toUpperCase()+base.slice(1)+'#2026';
+      users.push({user:user, pass:pass, rol:rol, nombre:(String(nombre||'').trim()||user)});
+      save(UKEY, users);
+      renderAccts();
+      if(document.getElementById('accUsers')) renderAcceso();
+      return {ok:true, user:user, pass:pass, rolNombre:(roles[rol]?roles[rol].nombre:rol)};
+    };
 
     var saved=null; try{ saved=sessionStorage.getItem(SKEY); }catch(e){}
     if(saved){ var su=users.filter(function(x){return x.user===saved;})[0]; if(su){ current=su; overlay.classList.add('hidden'); applyRbac(); if(rolDe(current).admin) renderAcceso(); } }
