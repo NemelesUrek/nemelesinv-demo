@@ -11,10 +11,28 @@
 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://open.er-api.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'" />
 <title>NemelesInv · Analítica de Inventario Retail</title>
+<meta name="description" content="Demo interactiva de NemelesInv: panel de inventario y ventas con login por roles, multi-moneda y modo oscuro." />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E" />
+<!-- Open Graph / Twitter: vista previa al compartir el enlace -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="NemelesInv" />
+<meta property="og:title" content="NemelesInv · Analítica de Inventario Retail" />
+<meta property="og:description" content="Demo interactiva de NemelesInv: panel de inventario y ventas con login por roles, multi-moneda y modo oscuro." />
+<meta property="og:url" content="https://nemelesurek.github.io/nemelesinv-demo/" />
+<meta property="og:image" content="https://nemelesurek.github.io/nemelesinv-demo/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:locale" content="es_ES" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="NemelesInv · Analítica de Inventario Retail" />
+<meta name="twitter:description" content="Demo interactiva de NemelesInv: panel de inventario y ventas con login por roles, multi-moneda y modo oscuro." />
+<meta name="twitter:image" content="https://nemelesurek.github.io/nemelesinv-demo/og.png" />
 <!--
   ============================================================================
   DASHBOARD DE ANALÍTICA DE INVENTARIO RETAIL  ·  pieza de portafolio
-  100% OFFLINE · vanilla · sin CDN, sin librerías, sin fuentes web.
+  Offline-first: funciona sin red; única llamada externa opcional: tasas de
+  cambio en vivo (open.er-api.com, con caché y respaldo manual).
+  Vanilla · sin librerías, sin fuentes web.
   Todo el CSS/JS es inline. Todos los gráficos son SVG calculado a mano.
   Idioma: español (es-ES) · moneda EUR · mercado: centros comerciales de España.
   Modelo de datos único: stock total 238.420 u = sano 167.000 + lento 37.180 + overstock 34.240.
@@ -1312,6 +1330,9 @@
   .login-acct{border:1px solid #e5e7eb;border-radius:9px;padding:5px 9px;cursor:pointer;font-size:11.5px;color:#4b5563;background:#faf9ff}
   .login-acct:hover{border-color:#7c3aed;color:#7c3aed}
   .login-acct b{color:#7c3aed}
+  .login-credit{display:block;margin-top:10px;color:#9ca3af}
+  .login-credit a{color:#7c3aed;text-decoration:underline}
+  .theme-dark .login-credit{color:#7b87a3}
   .acc-table{width:100%;border-collapse:collapse;font-size:13px}
   .acc-table th,.acc-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#e5e7eb)}
   .acc-table th{color:var(--muted,#6b7280);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
@@ -1349,6 +1370,7 @@
       <b>Cuentas de prueba (clic para autocompletar):</b>
       <div class="login-accts" id="loginAccts"></div>
       <small>⚠️ Demo de UX: en una página estática esto NO protege de verdad (las claves van en el código). La seguridad real necesita un backend.</small>
+      <small class="login-credit">Demo de portafolio hecha por Nemeles · <a href="https://github.com/NemelesUrek" target="_blank" rel="noopener">GitHub</a></small>
     </div>
   </div>
 </div>
@@ -4673,7 +4695,7 @@
       <h4>¿Quieres un panel así para tu negocio?</h4>
       <p>Convierte tus datos de inventario y ventas en decisiones: rotura, overstock y reposición prioritaria en un vistazo. Diseño a medida, 100% propio y sin dependencias externas.</p>
     </div>
-    <a class="foot-cta" href="#contacto">
+    <a class="foot-cta" href="https://github.com/NemelesUrek" target="_blank" rel="noopener">
       Hablemos
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
@@ -4764,8 +4786,9 @@
   /* ==========================================================================
      INTERACCIÓN — JS vanilla, inline, sin librerías ni recursos externos.
      Defensivo: todo va envuelto en una IIFE y comprueba que los nodos existan
-     antes de usarlos. NUNCA se inyecta el valor del usuario con innerHTML;
-     solo se compara contra atributos data-* y se alterna display/clases.
+     antes de usarlos. El valor del usuario NUNCA se inyecta con innerHTML sin
+     escapar: o se compara contra atributos data-* y se alterna display/clases,
+     o se pasa por el helper esc() antes de interpolarlo (ver módulo AUTH+RBAC).
      ========================================================================== */
   (function () {
     'use strict';
@@ -6400,13 +6423,21 @@
       {user:'admin',    pass:'Admin#2026',    rol:'admin',    nombre:'Administrador'},
       {user:'gerente',  pass:'Gerente#2026',  rol:'gerente',  nombre:'Laura Gerente'},
       {user:'ventas',   pass:'Ventas#2026',   rol:'ventas',   nombre:'Diego Ventas'},
-      {user:'almacen',  pass:'Almacen#2026',  rol:'almacen',  nombre:'Sara Almacen'},
+      {user:'almacen',  pass:'Almacen#2026',  rol:'almacen',  nombre:'Sara Almacén'},
       {user:'consulta', pass:'Consulta#2026', rol:'consulta', nombre:'Invitado'}
     ];
     var UKEY='nemelesinv-users', RKEY='nemelesinv-roles', SKEY='nemelesinv-session';
     function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) || def; }catch(e){ return def; } }
     function save(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
     function notify(m){ if (typeof toast==='function') toast(m); }
+    /* Escape HTML: obligatorio antes de interpolar datos de usuario en innerHTML
+       (texto Y atributos — las comillas escapadas mantienen data-* intactos:
+       getAttribute devuelve el valor original ya des-escapado). */
+    function esc(s){
+      return String(s==null?'':s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
     var users = load(UKEY, DEF_USERS);
     var roles = load(RKEY, DEF_ROLES);
     Object.keys(DEF_ROLES).forEach(function(r){ if(!roles[r]) roles[r]=DEF_ROLES[r]; });
@@ -6454,7 +6485,7 @@
     var accts=document.getElementById('loginAccts');
     function renderAccts(){
       if(!accts) return;
-      accts.innerHTML=users.map(function(u){ return '<span class="login-acct" data-u="'+u.user+'" data-p="'+u.pass+'"><b>'+u.user+'</b> · '+(roles[u.rol]?roles[u.rol].nombre:u.rol)+'</span>'; }).join('');
+      accts.innerHTML=users.map(function(u){ return '<span class="login-acct" data-u="'+esc(u.user)+'" data-p="'+esc(u.pass)+'"><b>'+esc(u.user)+'</b> · '+esc(roles[u.rol]?roles[u.rol].nombre:u.rol)+'</span>'; }).join('');
     }
     if(accts){
       renderAccts();
@@ -6475,18 +6506,18 @@
     function renderAcceso(){
       var ut='<table class="acc-table"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th></th></tr></thead><tbody>';
       users.forEach(function(u,i){
-        ut+='<tr><td>'+u.user+'</td><td>'+u.nombre+'</td><td><select data-ui="'+i+'">'+
-          Object.keys(roles).map(function(r){ return '<option value="'+r+'"'+(u.rol===r?' selected':'')+'>'+roles[r].nombre+'</option>'; }).join('')+
+        ut+='<tr><td>'+esc(u.user)+'</td><td>'+esc(u.nombre)+'</td><td><select data-ui="'+i+'">'+
+          Object.keys(roles).map(function(r){ return '<option value="'+esc(r)+'"'+(u.rol===r?' selected':'')+'>'+esc(roles[r].nombre)+'</option>'; }).join('')+
           '</select></td><td>'+(u.user==='admin'?'':'<button class="acc-del" data-del="'+i+'">Eliminar</button>')+'</td></tr>';
       });
       ut+='</tbody></table>';
       var au=document.getElementById('accUsers'); if(au)au.innerHTML=ut;
-      var nr=document.getElementById('nuRole'); if(nr)nr.innerHTML=Object.keys(roles).map(function(r){return '<option value="'+r+'">'+roles[r].nombre+'</option>';}).join('');
+      var nr=document.getElementById('nuRole'); if(nr)nr.innerHTML=Object.keys(roles).map(function(r){return '<option value="'+esc(r)+'">'+esc(roles[r].nombre)+'</option>';}).join('');
       var mt='<table class="acc-matrix"><thead><tr><th>Rol \\ Vista</th>'+ALL_VIEWS.map(function(v){return '<th>'+VIEW_LABEL[v]+'</th>';}).join('')+'</tr></thead><tbody>';
       Object.keys(roles).forEach(function(r){
-        mt+='<tr><td>'+roles[r].nombre+'</td>'+ALL_VIEWS.map(function(v){
+        mt+='<tr><td>'+esc(roles[r].nombre)+'</td>'+ALL_VIEWS.map(function(v){
           var ck=(roles[r].views||[]).indexOf(v)!==-1?' checked':''; var dis=(r==='admin')?' disabled':'';
-          return '<td><input type="checkbox" data-r="'+r+'" data-v="'+v+'"'+ck+dis+'></td>';
+          return '<td><input type="checkbox" data-r="'+esc(r)+'" data-v="'+v+'"'+ck+dis+'></td>';
         }).join('')+'</tr>';
       });
       mt+='</tbody></table>';
